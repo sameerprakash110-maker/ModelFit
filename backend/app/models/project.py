@@ -1,5 +1,5 @@
-from typing import TYPE_CHECKING, List, Optional
-from sqlalchemy import String, Text
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from sqlalchemy import JSON, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
 from app.models.base import TimestampMixin, UUIDPrimaryKeyMixin
@@ -17,7 +17,12 @@ class Project(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     business_domain: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
-    system_prompt: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    # system_prompt is required (NOT NULL) per the database contract
+    system_prompt: Mapped[str] = mapped_column(Text, nullable=False)
+
+    # --- Additive nullable JSON columns for output formatting and scoring rubric ---
+    output_schema: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True)
+    rubric: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True)
 
     # Relationships
     benchmarks: Mapped[List["Benchmark"]] = relationship(

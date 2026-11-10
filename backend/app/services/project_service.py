@@ -38,6 +38,8 @@ class ProjectService:
             description=project_in.description,
             business_domain=project_in.business_domain,
             system_prompt=project_in.system_prompt,
+            output_schema=project_in.output_schema,
+            rubric=project_in.rubric,
         )
         db.add(project)
         db.commit()

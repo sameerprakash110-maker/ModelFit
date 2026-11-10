@@ -1,10 +1,21 @@
 from fastapi.testclient import TestClient
 
+_SYS = "You are a helpful assistant."
+
+
+def _make_project(client: TestClient, name: str = "Test Project") -> str:
+    """Helper: create a project and return its ID."""
+    res = client.post(
+        "/api/v1/projects",
+        json={"name": name, "system_prompt": _SYS},
+    )
+    assert res.status_code == 201, f"Project creation failed: {res.json()}"
+    return res.json()["id"]
+
 
 def test_create_benchmark_success(client: TestClient):
     """Test creating a benchmark for an existing project."""
-    project_res = client.post("/api/v1/projects", json={"name": "Legal QA Project"})
-    project_id = project_res.json()["id"]
+    project_id = _make_project(client, "Legal QA Project")
 
     payload = {
         "project_id": project_id,
@@ -37,8 +48,7 @@ def test_create_benchmark_nonexistent_project_fails(client: TestClient):
 
 def test_get_benchmark_by_id(client: TestClient):
     """Test retrieving benchmark details by ID."""
-    p_res = client.post("/api/v1/projects", json={"name": "Test Project"})
-    project_id = p_res.json()["id"]
+    project_id = _make_project(client, "Test Project")
 
     b_res = client.post(
         "/api/v1/benchmarks",
@@ -48,6 +58,7 @@ def test_get_benchmark_by_id(client: TestClient):
             "selected_models": ["llama-3.3-70b-versatile"],
         },
     )
+    assert b_res.status_code == 201
     benchmark_id = b_res.json()["id"]
 
     get_res = client.get(f"/api/v1/benchmarks/{benchmark_id}")
@@ -58,8 +69,7 @@ def test_get_benchmark_by_id(client: TestClient):
 
 def test_update_benchmark_status(client: TestClient):
     """Test updating the lifecycle status of a benchmark."""
-    p_res = client.post("/api/v1/projects", json={"name": "Status Project"})
-    project_id = p_res.json()["id"]
+    project_id = _make_project(client, "Status Project")
 
     b_res = client.post(
         "/api/v1/benchmarks",
@@ -69,6 +79,7 @@ def test_update_benchmark_status(client: TestClient):
             "selected_models": ["gemini-1.5-flash"],
         },
     )
+    assert b_res.status_code == 201
     benchmark_id = b_res.json()["id"]
     assert b_res.json()["status"] == "pending"
 
@@ -91,8 +102,7 @@ def test_update_benchmark_status(client: TestClient):
 
 def test_update_benchmark_invalid_status_fails(client: TestClient):
     """Test that setting an unknown status returns a 400 validation error."""
-    p_res = client.post("/api/v1/projects", json={"name": "Invalid Status Project"})
-    project_id = p_res.json()["id"]
+    project_id = _make_project(client, "Invalid Status Project")
 
     b_res = client.post(
         "/api/v1/benchmarks",
@@ -102,6 +112,7 @@ def test_update_benchmark_invalid_status_fails(client: TestClient):
             "selected_models": ["gpt-4o"],
         },
     )
+    assert b_res.status_code == 201
     benchmark_id = b_res.json()["id"]
 
     patch_res = client.patch(

@@ -1,5 +1,8 @@
 from fastapi.testclient import TestClient
 
+# Reusable default system_prompt so every project payload satisfies the NOT NULL constraint.
+_SYS = "You are a helpful assistant."
+
 
 def test_create_project_success(client: TestClient):
     """Test successful creation of a new benchmarking project."""
@@ -25,11 +28,15 @@ def test_create_project_success(client: TestClient):
 def test_create_project_invalid_payload(client: TestClient):
     """Test project creation with missing or empty required name field."""
     # Empty name violates min_length=1
-    response = client.post("/api/v1/projects", json={"name": ""})
+    response = client.post("/api/v1/projects", json={"name": "", "system_prompt": _SYS})
     assert response.status_code == 422
 
     # Missing name completely
-    response = client.post("/api/v1/projects", json={"description": "Missing name"})
+    response = client.post("/api/v1/projects", json={"description": "Missing name", "system_prompt": _SYS})
+    assert response.status_code == 422
+
+    # Missing system_prompt (now required)
+    response = client.post("/api/v1/projects", json={"name": "No Prompt"})
     assert response.status_code == 422
 
 
@@ -37,7 +44,11 @@ def test_get_project_by_id(client: TestClient):
     """Test retrieving an existing project by its ID."""
     create_res = client.post(
         "/api/v1/projects",
-        json={"name": "Financial Document Summarization", "business_domain": "Finance"},
+        json={
+            "name": "Financial Document Summarization",
+            "business_domain": "Finance",
+            "system_prompt": _SYS,
+        },
     )
     assert create_res.status_code == 201
     project_id = create_res.json()["id"]
@@ -61,8 +72,9 @@ def test_update_project(client: TestClient):
     """Test updating project details."""
     create_res = client.post(
         "/api/v1/projects",
-        json={"name": "Initial Name", "description": "Old description"},
+        json={"name": "Initial Name", "description": "Old description", "system_prompt": _SYS},
     )
+    assert create_res.status_code == 201
     project_id = create_res.json()["id"]
 
     update_res = client.put(
@@ -80,8 +92,9 @@ def test_delete_project(client: TestClient):
     """Test deleting an existing project."""
     create_res = client.post(
         "/api/v1/projects",
-        json={"name": "Project to Delete"},
+        json={"name": "Project to Delete", "system_prompt": _SYS},
     )
+    assert create_res.status_code == 201
     project_id = create_res.json()["id"]
 
     delete_res = client.delete(f"/api/v1/projects/{project_id}")
@@ -94,8 +107,8 @@ def test_delete_project(client: TestClient):
 
 def test_list_projects(client: TestClient):
     """Test listing multiple projects."""
-    client.post("/api/v1/projects", json={"name": "Project Alpha"})
-    client.post("/api/v1/projects", json={"name": "Project Beta"})
+    client.post("/api/v1/projects", json={"name": "Project Alpha", "system_prompt": _SYS})
+    client.post("/api/v1/projects", json={"name": "Project Beta", "system_prompt": _SYS})
 
     res = client.get("/api/v1/projects")
     assert res.status_code == 200
@@ -104,3 +117,18 @@ def test_list_projects(client: TestClient):
     names = [p["name"] for p in data]
     assert "Project Alpha" in names
     assert "Project Beta" in names
+
+
+def test_create_project_with_json_fields(client: TestClient):
+    """Test creating a project with the new output_schema and rubric JSON fields."""
+    payload = {
+        "name": "Structured Output Project",
+        "system_prompt": "Return JSON only.",
+        "output_schema": {"type": "object", "properties": {"answer": {"type": "string"}}},
+        "rubric": {"factual_accuracy": 0.5, "conciseness": 0.3, "format": 0.2},
+    }
+    response = client.post("/api/v1/projects", json=payload)
+    assert response.status_code == 201
+    data = response.json()
+    assert data["output_schema"] == payload["output_schema"]
+    assert data["rubric"] == payload["rubric"]
