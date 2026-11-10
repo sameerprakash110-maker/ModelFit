@@ -1,5 +1,6 @@
+from datetime import datetime
 from typing import TYPE_CHECKING, List, Optional
-from sqlalchemy import ForeignKey, JSON, String, Text
+from sqlalchemy import DateTime, ForeignKey, Integer, JSON, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
 from app.models.base import TimestampMixin, UUIDPrimaryKeyMixin
@@ -29,6 +30,14 @@ class Benchmark(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         nullable=False,
         index=True,
     )
+
+    # --- Additive benchmark configuration columns ---
+    completed_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    baseline_model: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    # NOT NULL with default 1 — every benchmark runs at least once
+    repeats: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
 
     # Relationships
     project: Mapped["Project"] = relationship("Project", back_populates="benchmarks")

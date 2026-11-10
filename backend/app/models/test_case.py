@@ -1,5 +1,5 @@
-from typing import TYPE_CHECKING, List, Optional
-from sqlalchemy import ForeignKey, String, Text
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from sqlalchemy import JSON, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
 from app.models.base import TimestampMixin, UUIDPrimaryKeyMixin
@@ -22,7 +22,8 @@ class TestCase(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     )
     input_prompt: Mapped[str] = mapped_column(Text, nullable=False)
     expected_behavior: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    evaluation_criteria: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    # JSON per database contract — stores structured scoring criteria
+    evaluation_criteria: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True)
 
     # Relationships
     project: Mapped["Project"] = relationship("Project", back_populates="test_cases")
