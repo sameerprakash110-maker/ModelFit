@@ -1,7 +1,8 @@
 from typing import List
 from fastapi import APIRouter
-from app.schemas.provider import ProviderResponse
+from app.schemas.provider import ProviderHealthResponse, ProviderResponse
 from app.services.provider_service import ProviderService
+from app.services.provider_health_service import ProviderHealthService
 
 router = APIRouter()
 
@@ -24,3 +25,13 @@ def list_providers() -> List[ProviderResponse]:
 def get_provider(provider_name: str) -> ProviderResponse:
     """Retrieve configuration status and supported models for a specific AI provider."""
     return ProviderService.get_provider_by_name(provider_name)
+
+
+@router.get(
+    "/{provider_name}/health",
+    response_model=ProviderHealthResponse,
+    summary="Check provider API health",
+)
+async def check_provider_health(provider_name: str) -> ProviderHealthResponse:
+    """Check provider credentials and API reachability without generating output."""
+    return await ProviderHealthService.check_health(provider_name)

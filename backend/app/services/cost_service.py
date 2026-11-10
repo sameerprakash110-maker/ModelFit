@@ -20,12 +20,6 @@ class CostService:
         "gemini-1.5-flash": (0.075, 0.30),
         "gemini-2.5-flash": (0.30, 2.50),
 
-        # OpenAI
-        "gpt-4o": (2.50, 10.00),
-        "gpt-4o-mini": (0.15, 0.60),
-        "o1-preview": (15.00, 60.00),
-        "o1-mini": (3.00, 12.00),
-
         # Groq
         "qwen/qwen3.8-27b": (0.80, 4.00),
         "openai/gpt-oss-120b": (0.15, 0.60),

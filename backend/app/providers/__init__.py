@@ -3,11 +3,9 @@ from app.core.config import get_settings
 from app.providers.base import BaseLLMProvider, ProviderResult
 from app.providers.gemini import GeminiProvider
 from app.providers.groq import GroqProvider
-from app.providers.openai import OpenAIProvider
 
 PROVIDER_CLASSES: Dict[str, Type[BaseLLMProvider]] = {
     "gemini": GeminiProvider,
-    "openai": OpenAIProvider,
     "groq": GroqProvider,
 }
 
@@ -22,8 +20,6 @@ def get_provider(provider_name: str) -> BaseLLMProvider:
     api_key = None
     if provider_name.lower() == "gemini":
         api_key = settings.GEMINI_API_KEY
-    elif provider_name.lower() == "openai":
-        api_key = settings.OPENAI_API_KEY
     elif provider_name.lower() == "groq":
         api_key = settings.GROQ_API_KEY
 
@@ -34,7 +30,6 @@ __all__ = [
     "BaseLLMProvider",
     "ProviderResult",
     "GeminiProvider",
-    "OpenAIProvider",
     "GroqProvider",
     "PROVIDER_CLASSES",
     "get_provider",

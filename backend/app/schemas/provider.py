@@ -31,6 +31,24 @@ class ProviderListResponse(BaseModel):
     total: int
 
 
+class ProviderHealthResponse(BaseModel):
+    """Live API connectivity and credential status for a provider."""
+
+    provider_name: str
+    is_configured: bool
+    is_healthy: bool
+    status: Literal[
+        "healthy",
+        "not_configured",
+        "authentication_error",
+        "rate_limited",
+        "unavailable",
+        "error",
+    ]
+    latency_ms: Optional[float] = None
+    message: str
+
+
 class ProviderResult(BaseModel):
     """Standardized result returned after executing an LLM request."""
 

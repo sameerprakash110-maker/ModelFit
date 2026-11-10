@@ -3,7 +3,6 @@ import pytest
 from app.providers import get_provider
 from app.providers.gemini import GeminiProvider
 from app.providers.groq import GroqProvider
-from app.providers.openai import OpenAIProvider
 
 
 def test_provider_factory():
@@ -13,10 +12,6 @@ def test_provider_factory():
     assert isinstance(gemini, GeminiProvider)
     assert gemini.provider_name == "gemini"
 
-    openai = get_provider("openai")
-    assert isinstance(openai, OpenAIProvider)
-    assert openai.provider_name == "openai"
-
     groq = get_provider("groq")
     assert isinstance(groq, GroqProvider)
     assert groq.provider_name == "groq"
@@ -25,11 +20,18 @@ def test_provider_factory():
         get_provider("invalid_provider")
 
 
+def test_openai_provider_removed():
+    """Verify OpenAI is no longer supported."""
+
+    with pytest.raises(ValueError):
+        get_provider("openai")
+
+
 @pytest.mark.asyncio
 async def test_provider_mock_generate():
-    """Verify mock generation returns structured ProviderResult for all providers."""
+    """Verify mock generation works for all supported providers."""
 
-    for name in ["gemini", "openai", "groq"]:
+    for name in ["gemini", "groq"]:
         provider = get_provider(name)
 
         result = await provider.generate(
@@ -45,19 +47,6 @@ async def test_provider_mock_generate():
 
 
 @pytest.mark.asyncio
-async def test_openai_live_generate_raises_not_implemented():
-    """Verify OpenAI raises NotImplementedError until live integration is implemented."""
-
-    provider = get_provider("openai")
-
-    with pytest.raises(NotImplementedError):
-        await provider.generate(
-            prompt="Live test",
-            mock=False,
-        )
-
-
-@pytest.mark.asyncio
 async def test_gemini_mock_generate():
     """Verify Gemini mock generation works without an API key."""
 
@@ -70,4 +59,20 @@ async def test_gemini_mock_generate():
 
     assert result.is_mock is True
     assert result.provider == "gemini"
+    assert result.content
+
+
+@pytest.mark.asyncio
+async def test_groq_mock_generate():
+    """Verify Groq mock generation works without an API key."""
+
+    provider = get_provider("groq")
+
+    result = await provider.generate(
+        prompt="Hello world",
+        mock=True,
+    )
+
+    assert result.is_mock is True
+    assert result.provider == "groq"
     assert result.content
