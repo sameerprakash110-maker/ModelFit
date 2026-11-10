@@ -7,15 +7,34 @@ from app.services.roi_service import ROIService
 
 
 def test_cost_calculation():
-    """Verify token pricing calculations for known models and fallback defaults."""
-    # Gemini 1.5 Pro: $1.25 / 1M prompt, $5.00 / 1M completion
-    # 10,000 prompt tokens = 0.0125, 2,000 completion tokens = 0.01
-    cost = CostService.calculate_cost("gemini-1.5-pro", prompt_tokens=10_000, completion_tokens=2_000)
+    """Verify token pricing calculations for supported models."""
+
+    # Gemini 1.5 Pro
+    cost = CostService.calculate_cost(
+        "gemini-1.5-pro",
+        prompt_tokens=10_000,
+        completion_tokens=2_000,
+    )
+
     assert cost == 0.0225
 
-    # Groq Llama 3.1 8B: $0.05 / 1M prompt, $0.08 / 1M completion
-    groq_cost = CostService.calculate_cost("llama-3.1-8b-instant", prompt_tokens=100_000, completion_tokens=100_000)
-    assert groq_cost == 0.013
+    # Groq GPT-OSS 20B
+    groq_cost = CostService.calculate_cost(
+        "openai/gpt-oss-20b",
+        prompt_tokens=100_000,
+        completion_tokens=100_000,
+    )
+
+    assert groq_cost == 0.0375
+
+    # Unknown model should return None
+    unknown_cost = CostService.calculate_cost(
+        "unknown-model",
+        prompt_tokens=1000,
+        completion_tokens=500,
+    )
+
+    assert unknown_cost is None
 
 
 @pytest.mark.asyncio
