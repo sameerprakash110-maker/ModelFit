@@ -25,6 +25,21 @@ class TestCaseService:
         return list(db.scalars(query.offset(skip).limit(limit)).all())
 
     @staticmethod
+    def list_test_cases_for_project(db: Session, project_id: str) -> List[TestCase]:
+        """Return all test cases belonging to a specific project.
+
+        Dedicated accessor used by benchmark runners and reporting services that
+        need to iterate over every test case for a known project without optional
+        filtering overhead.
+        """
+        query = (
+            select(TestCase)
+            .where(TestCase.project_id == project_id)
+            .order_by(TestCase.created_at.desc())
+        )
+        return list(db.scalars(query).all())
+
+    @staticmethod
     def get_test_case_by_id(db: Session, test_case_id: str) -> Optional[TestCase]:
         """Fetch test case by ID."""
         query = select(TestCase).where(TestCase.id == test_case_id)

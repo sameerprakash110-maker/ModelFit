@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Any, Dict, Optional
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -8,7 +8,10 @@ class TestCaseBase(BaseModel):
 
     input_prompt: str = Field(..., min_length=1, description="Input prompt payload sent to the model")
     expected_behavior: Optional[str] = Field(None, description="Expected model answer or reasoning behavior")
-    evaluation_criteria: Optional[str] = Field(None, description="Criteria for LLM Judge or scoring metric")
+    # JSON per database contract — structured scoring / pass-fail criteria
+    evaluation_criteria: Optional[Dict[str, Any]] = Field(
+        None, description="Structured evaluation criteria for LLM Judge or scoring metric"
+    )
 
 
 class TestCaseCreate(TestCaseBase):
@@ -22,7 +25,7 @@ class TestCaseUpdate(BaseModel):
 
     input_prompt: Optional[str] = Field(None, min_length=1)
     expected_behavior: Optional[str] = None
-    evaluation_criteria: Optional[str] = None
+    evaluation_criteria: Optional[Dict[str, Any]] = None
 
 
 class TestCaseResponse(TestCaseBase):
