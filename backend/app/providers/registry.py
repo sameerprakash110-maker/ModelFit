@@ -7,9 +7,7 @@ _provider_registry: Dict[str, BaseLLMProvider] = {}
 
 
 def register_provider(provider: BaseLLMProvider):
-    """
-    Register an AI provider in the registry.
-    """
+    """Register an AI provider."""
 
     name = provider.provider_name.lower()
 
@@ -20,9 +18,7 @@ def register_provider(provider: BaseLLMProvider):
 
 
 def get_provider(provider_name: str) -> BaseLLMProvider:
-    """
-    Retrieve a registered provider by name.
-    """
+    """Retrieve a registered AI provider."""
 
     name = provider_name.lower()
 
@@ -35,8 +31,14 @@ def get_provider(provider_name: str) -> BaseLLMProvider:
 
 
 def get_all_providers() -> Dict[str, BaseLLMProvider]:
-    """
-    Return all registered providers.
-    """
+    """Return all registered providers."""
 
     return _provider_registry.copy()
+
+
+def initialize_providers():
+    """Initialize and register all supported providers."""
+
+    from app.providers.gemini import GeminiProvider
+
+    register_provider(GeminiProvider())

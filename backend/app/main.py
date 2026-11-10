@@ -1,3 +1,4 @@
+from app.providers.registry import initialize_providers
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 from fastapi import FastAPI
@@ -11,16 +12,31 @@ from app.utils.logger import logger
 settings = get_settings()
 
 
+# @asynccontextmanager
+# async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+#     """Application lifespan context manager for startup and shutdown routines."""
+#     logger.info(f"Starting {settings.APP_NAME} v{settings.APP_VERSION} [Debug: {settings.DEBUG}]")
+#     # Initialize SQLite database schema on startup if not present
+#     init_db()
+#     logger.info("Database initialized successfully.")
+#     yield
+#     logger.info(f"Shutting down {settings.APP_NAME}...")
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    """Application lifespan context manager for startup and shutdown routines."""
-    logger.info(f"Starting {settings.APP_NAME} v{settings.APP_VERSION} [Debug: {settings.DEBUG}]")
-    # Initialize SQLite database schema on startup if not present
+
+    logger.info(
+        f"Starting {settings.APP_NAME} v{settings.APP_VERSION}"
+    )
+
     init_db()
     logger.info("Database initialized successfully.")
-    yield
-    logger.info(f"Shutting down {settings.APP_NAME}...")
 
+    initialize_providers()
+    logger.info("AI providers initialized successfully.")
+
+    yield
+
+    logger.info(f"Shutting down {settings.APP_NAME}...")
 
 def create_application() -> FastAPI:
     """Factory creating and configuring the FastAPI backend application."""

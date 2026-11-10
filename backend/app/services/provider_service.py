@@ -13,7 +13,7 @@ class ProviderService:
         "gemini": {
             "display_name": "Google Gemini",
             "description": "Next-generation multimodal reasoning and long-context LLMs by Google DeepMind.",
-            "default_model": "gemini-1.5-pro",
+            "default_model": "gemini-3.1-flash-lite",
         },
         "openai": {
             "display_name": "OpenAI",
