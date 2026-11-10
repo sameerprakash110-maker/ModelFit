@@ -1,31 +1,32 @@
-from typing import List, Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict
+from typing import Optional, Literal
 
 
-class ProviderModelDetail(BaseModel):
-    """Detailed metadata for a model offered by a provider."""
+class ProviderResult(BaseModel):
 
-    model_id: str
+    provider_name: str
+    model_name: str
+
+    response_text: Optional[str] = None
+
+    input_tokens: int = 0
+    output_tokens: int = 0
+
+    latency_ms: float = 0.0
+    execution_cost: float = 0.0
+
+    status: Literal["success", "failed"]
+
+    error_message: Optional[str] = None
+
+    model_config = ConfigDict(
+        from_attributes=True
+    )
+
+
+class ProviderInfo(BaseModel):
+
+    name: str
     display_name: str
-    context_window: int
-    input_cost_per_million: float
-    output_cost_per_million: float
-
-
-class ProviderResponse(BaseModel):
-    """Schema representing an AI provider and its configuration status."""
-
-    name: str = Field(..., description="Unique provider key (e.g. 'gemini', 'openai', 'groq')")
-    display_name: str = Field(..., description="Human-readable provider name")
-    description: Optional[str] = Field(None, description="Provider summary and capabilities")
-    is_configured: bool = Field(..., description="Indicates if API credentials are provided in the environment")
-    is_active: bool = Field(True, description="Whether the provider is currently active")
-    supported_models: List[str] = Field(default_factory=list, description="List of available models")
-    default_model: Optional[str] = Field(None, description="Recommended default model for this provider")
-
-
-class ProviderListResponse(BaseModel):
-    """List of all supported providers."""
-
-    providers: List[ProviderResponse]
-    total: int
+    configured: bool
+    supported_models: list[str]
