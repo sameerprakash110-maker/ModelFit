@@ -9,12 +9,16 @@ class CostService:
     """
 
     PRICING_TABLE: Dict[str, Tuple[float, float]] = {
+        # Google Gemini 3.x
+        "gemini-3.1-flash-lite": (0.25, 1.50),
+        "gemini-3.8-flash": (0.15, 0.60),
+        "gemini-3.5-flash": (0.15, 0.60),
 
-        # Google Gemini
+        # Google Gemini 1.5, 2.0 & 2.5
+        "gemini-2.0-flash-exp": (0.00, 0.00),
         "gemini-1.5-pro": (1.25, 5.00),
         "gemini-1.5-flash": (0.075, 0.30),
         "gemini-2.5-flash": (0.30, 2.50),
-        "gemini-3.1-flash-lite": (0.25, 1.50),
 
         # OpenAI
         "gpt-4o": (2.50, 10.00),
@@ -35,7 +39,6 @@ class CostService:
         prompt_tokens: int,
         completion_tokens: int,
     ) -> Optional[float]:
-
         """
         Calculate estimated standard token cost in USD.
 
@@ -52,13 +55,8 @@ class CostService:
 
         input_rate, output_rate = pricing
 
-        input_cost = (
-            prompt_tokens / 1_000_000
-        ) * input_rate
-
-        output_cost = (
-            completion_tokens / 1_000_000
-        ) * output_rate
+        input_cost = (prompt_tokens / 1_000_000) * input_rate
+        output_cost = (completion_tokens / 1_000_000) * output_rate
 
         total_cost = input_cost + output_cost
 
