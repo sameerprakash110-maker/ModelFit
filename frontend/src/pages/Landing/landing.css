@@ -1,0 +1,1090 @@
+/*
+  Landing page. Everything here is scoped under .lp.
+  Vocabulary: chalk (blue), tape (yellow), ink (navy), paper, tick (red).
+*/
+
+.lp {
+  font-family: var(--font-body);
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  color: var(--color-ink);
+  background: var(--color-paper);
+  overflow-x: clip;
+}
+
+.lp .wrap {
+  width: min(100% - 2.5rem, 76rem);
+  margin-inline: auto;
+}
+
+.lp :focus-visible {
+  outline: 3px solid var(--color-tick);
+  outline-offset: 3px;
+}
+
+/* ---------- Type ---------- */
+
+.lp .h2 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-variation-settings: 'wdth' 112;
+  font-size: clamp(2.1rem, 5.2vw, 4rem);
+  line-height: 0.98;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+.lp .h3 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-variation-settings: 'wdth' 92;
+  font-size: 1.5rem;
+  line-height: 1.15;
+}
+
+.lp .lede {
+  font-size: clamp(1.1rem, 1.6vw, 1.3rem);
+  line-height: 1.5;
+  max-width: 38em;
+}
+
+.lp .section-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.25rem;
+  margin-bottom: clamp(2.5rem, 6vw, 4.5rem);
+}
+
+/* ---------- Wordmark ---------- */
+
+.lp .wordmark {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.5rem;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+/* ---------- Buttons and links ---------- */
+
+/* A button is a sewn-on label: solid cloth, a line of stitching inside the edge. */
+.lp .btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem 1.6rem;
+  background: var(--color-tape);
+  color: var(--color-ink);
+  font-weight: 700;
+  font-size: 1.0625rem;
+  line-height: 1.2;
+  border-radius: 2px;
+  text-decoration: none;
+  transition: background-color 140ms ease;
+}
+
+.lp .btn::after {
+  content: '';
+  position: absolute;
+  inset: 5px;
+  border: 1.5px dashed var(--color-ink);
+  border-radius: 1px;
+  pointer-events: none;
+  transition: inset 140ms ease;
+}
+
+.lp .btn:hover {
+  background: #ffe27a;
+}
+
+.lp .btn:hover::after {
+  inset: 3px;
+}
+
+.lp .btn:active::after {
+  inset: 7px;
+}
+
+.lp .btn--small {
+  padding: 0.7rem 1.1rem;
+  font-size: 0.95rem;
+}
+
+.lp .stitch-link {
+  color: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  padding-bottom: 3px;
+  border-bottom: 2px dashed currentColor;
+}
+
+.lp .stitch-link:hover {
+  border-bottom-style: solid;
+}
+
+/* ---------- Tape ---------- */
+
+.lp .tape {
+  --ppu: 12px;
+  position: relative;
+  height: 58px;
+  background-color: var(--color-tape);
+  background-image:
+    repeating-linear-gradient(90deg, var(--color-ink) 0 2px, transparent 2px calc(var(--ppu) * 10)),
+    repeating-linear-gradient(90deg, var(--color-ink) 0 2px, transparent 2px calc(var(--ppu) * 5)),
+    repeating-linear-gradient(90deg, var(--color-ink) 0 1px, transparent 1px var(--ppu));
+  background-size:
+    100% 44%,
+    100% 30%,
+    100% 18%;
+  background-repeat: no-repeat;
+  border-block: 1px solid var(--color-tape-deep);
+}
+
+.lp .tape-num {
+  position: absolute;
+  bottom: 3px;
+  transform: translateX(-50%);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-variation-settings: 'wdth' 80;
+  font-size: 0.95rem;
+  line-height: 1;
+  color: var(--color-ink);
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+}
+
+.lp .scroll-tape {
+  position: absolute;
+  left: -6vw;
+  right: -6vw;
+  bottom: -30px;
+  z-index: 5;
+  transform: rotate(-2.2deg);
+  pointer-events: none;
+  filter: drop-shadow(0 10px 0 rgb(13 18 56 / 0.22));
+}
+
+.lp .scroll-tape-inner {
+  width: max-content;
+  will-change: transform;
+}
+
+/* ---------- Hero ---------- */
+
+.lp .hero {
+  position: relative;
+  background: var(--color-chalk);
+  color: #fff;
+  padding-bottom: clamp(6.5rem, 11vw, 9rem);
+  overflow-x: clip;
+}
+
+.lp .hero-nav {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  padding-block: 1.25rem;
+}
+
+.lp .hero-logo {
+  color: inherit;
+  text-decoration: none;
+  margin-right: auto;
+}
+
+.lp .hero-links {
+  display: none;
+  gap: 2rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-weight: 600;
+  font-size: 0.98rem;
+}
+
+.lp .hero-links a {
+  color: inherit;
+  text-decoration: none;
+  padding-block: 0.35rem;
+  border-bottom: 2px dashed transparent;
+}
+
+.lp .hero-links a:hover {
+  border-bottom-color: currentColor;
+}
+
+@media (min-width: 52rem) {
+  .lp .hero-links {
+    display: flex;
+  }
+}
+
+.lp .hero-measure {
+  margin-top: clamp(1.5rem, 5vh, 3.5rem);
+}
+
+/* The fitted block. Its dashed edges are the measure the type is fitted to. */
+.lp .hero-fit {
+  position: relative;
+  transition: opacity 260ms ease;
+}
+
+.lp .hero-fit.is-loading {
+  opacity: 0;
+}
+
+.lp .hero-fit::before,
+.lp .hero-fit::after {
+  content: '';
+  position: absolute;
+  top: -1.25rem;
+  bottom: -1.75rem;
+  border-left: 1px dashed rgb(255 255 255 / 0.5);
+}
+
+.lp .hero-fit::before {
+  left: 0;
+}
+
+.lp .hero-fit::after {
+  right: 0;
+}
+
+.lp .dimension {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  height: 1.5rem;
+  margin: 0 0 0.9rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  white-space: nowrap;
+  color: rgb(255 255 255 / 0.92);
+}
+
+.lp .dimension::before,
+.lp .dimension::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: currentColor;
+}
+
+.lp .hero-headline {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(3rem, 13vw, 11rem);
+  line-height: 0.88;
+  letter-spacing: -0.01em;
+}
+
+.lp .hero-line {
+  display: block;
+  width: max-content;
+  white-space: nowrap;
+}
+
+.lp .hero-fit.is-fitting .hero-line {
+  transition: font-variation-settings 1400ms cubic-bezier(0.22, 1, 0.3, 1);
+}
+
+.lp .hero-foot {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2rem;
+  margin-top: clamp(2.25rem, 5vw, 3.5rem);
+}
+
+.lp .hero-lede {
+  margin: 0;
+  max-width: 34em;
+  font-size: clamp(1.1rem, 1.7vw, 1.35rem);
+  line-height: 1.45;
+}
+
+.lp .hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1.25rem 2rem;
+}
+
+@media (min-width: 60rem) {
+  .lp .hero-foot {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+  }
+}
+
+/* ---------- The trap ---------- */
+
+.lp .trap {
+  padding-block: clamp(7rem, 13vw, 11rem) clamp(4.5rem, 9vw, 7.5rem);
+}
+
+.lp .trap-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 3.5rem;
+}
+
+@media (min-width: 64rem) {
+  .lp .trap-grid {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: 5rem;
+    align-items: start;
+  }
+}
+
+.lp .trap-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2.25rem;
+}
+
+.lp .trap-model {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.lp .trap-model legend {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0;
+  margin-bottom: 1.1rem;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-variation-settings: 'wdth' 92;
+  font-size: 1.35rem;
+  line-height: 1.15;
+}
+
+.lp .swatch {
+  flex: none;
+  display: inline-block;
+  width: 0.95rem;
+  height: 0.95rem;
+  border: 2px solid var(--color-ink);
+}
+
+.lp .swatch--current {
+  background: #fff;
+}
+
+.lp .swatch--candidate {
+  background: var(--color-tape);
+}
+
+.lp .field-label {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-ink-soft);
+}
+
+.lp .num {
+  display: flex;
+  align-items: baseline;
+  gap: 0.3rem;
+  max-width: 14rem;
+  margin-top: 0.15rem;
+  border-bottom: 2px solid var(--color-ink);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-variation-settings: 'wdth' 90;
+  font-size: 1.75rem;
+  line-height: 1.3;
+}
+
+.lp .num input {
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-variation-settings: inherit;
+  color: inherit;
+  font-variant-numeric: tabular-nums;
+}
+
+.lp .num input:focus {
+  outline: none;
+}
+
+.lp .num:focus-within {
+  border-bottom-color: var(--color-chalk);
+  box-shadow: 0 2px 0 var(--color-chalk);
+}
+
+.lp .num.is-invalid {
+  border-bottom-color: var(--color-tick);
+}
+
+.lp .field-error {
+  margin: 0.35rem 0 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #b92d17;
+}
+
+.lp .slider-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 1.25rem 0 0.4rem;
+}
+
+.lp .slider-value {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-variation-settings: 'wdth' 100;
+  font-size: 1.75rem;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.lp .tape-slider {
+  position: relative;
+  height: 58px;
+  overflow: hidden;
+  cursor: grab;
+  touch-action: pan-y;
+  user-select: none;
+  background: #e3e7f2;
+  border-radius: 2px;
+  box-shadow: 0 5px 0 rgb(13 18 56 / 0.14);
+}
+
+.lp .tape-slider.is-dragging {
+  cursor: grabbing;
+}
+
+.lp .tape-slider-strip {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transition: transform 140ms ease-out;
+}
+
+.lp .tape-slider.is-dragging .tape-slider-strip {
+  transition: none;
+}
+
+.lp .tape-needle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 3px;
+  margin-left: -1px;
+  background: var(--color-tick);
+  pointer-events: none;
+}
+
+.lp .tape-needle::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 7px solid transparent;
+  border-top: 9px solid var(--color-tick);
+}
+
+.lp .trap-hint {
+  margin: -0.75rem 0 0;
+  font-size: 0.9rem;
+  color: var(--color-ink-soft);
+}
+
+/* The rack: a rail with two price tags hanging from it. */
+.lp .rack {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(0.75rem, 3vw, 2.5rem);
+}
+
+.lp .rack::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -0.75rem;
+  right: -0.75rem;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--color-ink);
+}
+
+.lp .hang {
+  --rest: 0deg;
+  position: relative;
+  padding-top: 62px;
+  transform-origin: 50% 3px;
+  transform: rotate(var(--rest));
+  animation: lp-sway 1200ms cubic-bezier(0.3, 0.6, 0.3, 1);
+}
+
+/* The string from the rail to the hole in the tag. */
+.lp .hang::before {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 50%;
+  z-index: 2;
+  width: 2px;
+  height: 84px;
+  margin-left: -1px;
+  background: var(--color-ink);
+}
+
+@keyframes lp-sway {
+  0% {
+    transform: rotate(calc(var(--rest) + 4.5deg));
+  }
+  30% {
+    transform: rotate(calc(var(--rest) - 2.8deg));
+  }
+  58% {
+    transform: rotate(calc(var(--rest) + 1.4deg));
+  }
+  80% {
+    transform: rotate(calc(var(--rest) - 0.5deg));
+  }
+  100% {
+    transform: rotate(var(--rest));
+  }
+}
+
+.lp .tag {
+  --cut: 30px;
+  position: relative;
+  padding: 2px;
+  background: var(--color-ink);
+  clip-path: polygon(var(--cut) 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% 100%, 0 100%, 0 var(--cut));
+}
+
+.lp .tag-face {
+  position: relative;
+  padding: 3.4rem clamp(0.8rem, 2.4vw, 1.5rem) 1.5rem;
+  background: #fff;
+  clip-path: polygon(
+    calc(var(--cut) - 1px) 0,
+    calc(100% - var(--cut) + 1px) 0,
+    100% calc(var(--cut) - 1px),
+    100% 100%,
+    0 100%,
+    0 calc(var(--cut) - 1px)
+  );
+}
+
+.lp .tag--candidate .tag-face {
+  background: var(--color-tape);
+}
+
+.lp .tag-hole {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  z-index: 1;
+  width: 18px;
+  height: 18px;
+  margin-left: -9px;
+  border: 2px solid var(--color-ink);
+  border-radius: 50%;
+  background: var(--color-paper);
+}
+
+.lp .tag-name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-variation-settings: 'wdth' 88;
+  font-size: clamp(1.05rem, 1.9vw, 1.3rem);
+  line-height: 1.15;
+  text-wrap: balance;
+}
+
+.lp .tag-stamp {
+  display: inline-block;
+  margin: 0.8rem 0 0;
+  padding: 0.2rem 0.55rem;
+  border: 2.5px solid #c8321b;
+  border-radius: 3px;
+  background: #fff;
+  color: #c8321b;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-variation-settings: 'wdth' 110;
+  font-size: 0.9rem;
+  line-height: 1.2;
+  transform: rotate(-4deg);
+}
+
+.lp .tag-rows {
+  display: grid;
+  gap: 0.9rem;
+  margin: 1.2rem 0 0;
+}
+
+.lp .tag-rows dt {
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--color-ink-soft);
+}
+
+.lp .tag--candidate .tag-rows dt {
+  color: #4b4420;
+}
+
+.lp .tag-rows dd {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-variation-settings: 'wdth' 90;
+  font-size: 1.3rem;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.lp .tag-sticker s {
+  text-decoration-color: var(--color-tick);
+  text-decoration-thickness: 3px;
+}
+
+.lp .tag-rows dd.tag-real {
+  font-weight: 800;
+  font-variation-settings: 'wdth' 100;
+  font-size: clamp(1.7rem, 3.6vw, 2.6rem);
+  line-height: 1.05;
+}
+
+.lp .tag-unit {
+  display: block;
+  margin-top: 0.1rem;
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-variation-settings: normal;
+  font-variant-numeric: normal;
+  font-size: 0.82rem;
+  line-height: 1.3;
+}
+
+.lp .trap-verdict {
+  margin-top: 2.5rem;
+}
+
+.lp .trap-headline {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-variation-settings: 'wdth' 86;
+  font-size: clamp(1.7rem, 3.3vw, 2.6rem);
+  line-height: 1.05;
+  text-wrap: balance;
+}
+
+.lp .trap-headline.is-trap {
+  color: #c8321b;
+}
+
+.lp .trap-headline.is-saving {
+  color: var(--color-chalk);
+}
+
+.lp .trap-headline.is-incomplete {
+  font-size: 1.4rem;
+  color: var(--color-ink-soft);
+}
+
+.lp .trap-detail {
+  margin: 0.9rem 0 0;
+  max-width: 36em;
+}
+
+.lp .trap-footnote {
+  max-width: 44em;
+  margin: clamp(3rem, 6vw, 4.5rem) 0 0;
+  padding-top: 1.1rem;
+  border-top: 1.5px dashed rgb(13 18 56 / 0.35);
+  font-size: 0.95rem;
+  color: var(--color-ink-soft);
+}
+
+/* ---------- How a fitting works ---------- */
+
+/* Dot grid of pattern-drafting paper. */
+.lp .fitting {
+  padding-block: clamp(4.5rem, 9vw, 7.5rem);
+  background-color: #fff;
+  background-image: radial-gradient(circle, rgb(36 55 230 / 0.2) 1.1px, transparent 1.5px);
+  background-size: 26px 26px;
+}
+
+.lp .steps {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: clamp(2rem, 4vw, 2.75rem);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lp .step {
+  display: grid;
+  grid-template-columns: clamp(5.5rem, 22vw, 11rem) minmax(0, 1fr);
+  gap: clamp(1rem, 3.5vw, 2.75rem);
+  align-items: center;
+  max-width: 43rem;
+}
+
+.lp .step-text .h3 {
+  margin: 0 0 0.45rem;
+}
+
+.lp .step-text p {
+  margin: 0;
+  padding: 0.1rem 0;
+  background: #fff;
+}
+
+/* Laid out the way pieces are arranged on cloth: staggered, none quite square. */
+@media (min-width: 60rem) {
+  .lp .step:nth-child(even) {
+    margin-left: auto;
+  }
+
+  .lp .step:nth-child(3) {
+    margin-left: 14%;
+  }
+}
+
+.lp .step:nth-child(1) .pattern-piece {
+  transform: rotate(-5deg);
+}
+.lp .step:nth-child(2) .pattern-piece {
+  transform: rotate(7deg);
+}
+.lp .step:nth-child(3) .pattern-piece {
+  transform: rotate(-3deg);
+}
+.lp .step:nth-child(4) .pattern-piece {
+  transform: rotate(4deg);
+}
+.lp .step:nth-child(5) .pattern-piece {
+  transform: rotate(-8deg);
+}
+
+.lp .pattern-piece {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.lp .pattern-cut {
+  fill: #fff;
+  stroke: var(--color-chalk);
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+}
+
+.lp .pattern-seam {
+  fill: none;
+  stroke: var(--color-chalk);
+  stroke-width: 1.4;
+  stroke-dasharray: 6 5;
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: scale(0.84);
+}
+
+.lp .pattern-grain {
+  fill: none;
+  stroke: var(--color-chalk);
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.lp .pattern-number {
+  fill: var(--color-chalk);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-variation-settings: 'wdth' 120;
+  font-size: 54px;
+}
+
+/* ---------- What gets measured ---------- */
+
+.lp .chart {
+  padding-block: clamp(4.5rem, 9vw, 7.5rem);
+  background: var(--color-ink);
+  color: #fff;
+}
+
+.lp .size-chart {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.lp .size-chart thead th {
+  padding: 0 0 0.75rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: rgb(255 255 255 / 0.72);
+  border-bottom: 2px solid #fff;
+}
+
+.lp .size-chart tbody th,
+.lp .size-chart tbody td {
+  padding: 1.15rem 0;
+  vertical-align: baseline;
+  border-bottom: 1.5px dashed rgb(255 255 255 / 0.32);
+}
+
+.lp .size-chart tbody th {
+  width: 38%;
+  padding-right: 2rem;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-variation-settings: 'wdth' 96;
+  font-size: clamp(1.2rem, 2.1vw, 1.6rem);
+  line-height: 1.15;
+}
+
+.lp .size-chart tbody td {
+  color: rgb(255 255 255 / 0.9);
+}
+
+@media (max-width: 40rem) {
+  .lp .size-chart thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .lp .size-chart tbody tr {
+    display: block;
+    padding: 1.1rem 0;
+    border-bottom: 1.5px dashed rgb(255 255 255 / 0.32);
+  }
+
+  .lp .size-chart tbody tr:first-child {
+    border-top: 2px solid #fff;
+  }
+
+  .lp .size-chart tbody th,
+  .lp .size-chart tbody td {
+    display: block;
+    width: auto;
+    padding: 0;
+    border: 0;
+  }
+
+  .lp .size-chart tbody td {
+    margin-top: 0.35rem;
+  }
+}
+
+.lp .weights {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2rem;
+  margin-top: clamp(3rem, 7vw, 5rem);
+}
+
+@media (min-width: 60rem) {
+  .lp .weights {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: 5rem;
+    align-items: start;
+  }
+}
+
+.lp .weights-text .h3 {
+  margin: 0 0 0.6rem;
+}
+
+.lp .weights-text p {
+  margin: 0;
+  color: rgb(255 255 255 / 0.9);
+}
+
+.lp .weights-bar {
+  display: flex;
+  height: 30px;
+  gap: 3px;
+}
+
+.lp .weights-bar span {
+  flex-basis: 0;
+}
+
+.lp .tone-tape {
+  background: var(--color-tape);
+}
+.lp .tone-white {
+  background: #fff;
+}
+.lp .tone-pale {
+  background: var(--color-chalk-pale);
+}
+.lp .tone-tick {
+  background: var(--color-tick);
+}
+
+.lp .weights-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 1.75rem;
+  margin: 1.1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lp .weights-legend li {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.lp .weights-legend .swatch {
+  border: 0;
+}
+
+/* ---------- Verdicts ---------- */
+
+.lp .verdicts {
+  padding-block: clamp(4.5rem, 9vw, 7.5rem);
+  background: var(--color-tape);
+}
+
+.lp .labels {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 56rem) {
+  .lp .labels {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 2rem;
+  }
+}
+
+/* A woven garment label, stitched down along its edge. */
+.lp .label {
+  position: relative;
+  padding: 2.25rem 1.75rem 2rem;
+  background: #fff;
+  border-radius: 2px;
+  box-shadow: 0 7px 0 rgb(13 18 56 / 0.2);
+}
+
+.lp .label::after {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  border: 1.5px dashed var(--color-ink);
+  pointer-events: none;
+}
+
+.lp .label-word {
+  margin: 0;
+  width: max-content;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 4.5rem;
+  line-height: 0.95;
+  white-space: nowrap;
+  color: var(--color-chalk);
+}
+
+.lp .label p {
+  margin: 1rem 0 0;
+}
+
+/* ---------- Closing ---------- */
+
+.lp .closing {
+  padding-block: clamp(4.5rem, 10vw, 8rem) 2rem;
+  background: var(--color-chalk);
+  color: #fff;
+}
+
+.lp .closing-cta {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2rem;
+  justify-items: start;
+}
+
+.lp .closing-headline {
+  margin: 0;
+  max-width: 13em;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-variation-settings: 'wdth' 78;
+  font-size: clamp(2.6rem, 8vw, 6.5rem);
+  line-height: 0.92;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+.lp .closing-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem 2rem;
+  margin-top: clamp(4rem, 9vw, 7rem);
+  padding-top: 1.5rem;
+  border-top: 1.5px dashed rgb(255 255 255 / 0.5);
+}
+
+.lp .closing-foot p {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+/* ---------- Stand-in page for the lab ---------- */
+
+.lp.lab-stub {
+  min-height: 100vh;
+  background: var(--color-chalk);
+  color: #fff;
+  padding-block: 1.25rem 4rem;
+}
+
+.lp.lab-stub .wrap {
+  display: grid;
+  gap: 1.75rem;
+  justify-items: start;
+}
+
+.lp.lab-stub .h2 {
+  margin: clamp(3rem, 12vh, 7rem) 0 0;
+}
+
+.lp.lab-stub .lede {
+  margin: 0;
+}
