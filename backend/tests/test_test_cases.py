@@ -49,6 +49,7 @@ def test_create_test_case_without_evaluation_criteria(client: TestClient):
         json={
             "project_id": project_id,
             "input_prompt": "What is 2 + 2?",
+            "expected_behavior": "Return 4.",
         },
     )
     assert res.status_code == 201
@@ -60,6 +61,7 @@ def test_create_test_case_nonexistent_project_fails(client: TestClient):
     payload = {
         "project_id": "00000000-0000-0000-0000-000000000000",
         "input_prompt": "What is 2 + 2?",
+        "expected_behavior": "Return 4.",
     }
     response = client.post("/api/v1/test-cases", json=payload)
     assert response.status_code == 404
@@ -75,6 +77,7 @@ def test_get_and_delete_test_case(client: TestClient):
         json={
             "project_id": project_id,
             "input_prompt": "Generate a SQL query for top 5 customers by sales.",
+            "expected_behavior": "Return a valid SQL query.",
         },
     )
     assert tc_res.status_code == 201

@@ -55,6 +55,15 @@ depends_on: Union[str, Sequence[str], None] = None
 def upgrade() -> None:
     """Apply contract-alignment changes and create evaluation_attempts."""
 
+    # Existing nullable values must be normalised before SQLite recreates the
+    # tables with NOT NULL constraints below.
+    op.execute("UPDATE evaluations SET prompt_tokens = 0 WHERE prompt_tokens IS NULL")
+    op.execute("UPDATE evaluations SET completion_tokens = 0 WHERE completion_tokens IS NULL")
+    op.execute("UPDATE evaluations SET total_cost = 0 WHERE total_cost IS NULL")
+    op.execute("UPDATE evaluations SET latency_ms = 0 WHERE latency_ms IS NULL")
+    op.execute("UPDATE projects SET system_prompt = '' WHERE system_prompt IS NULL")
+    op.execute("UPDATE test_cases SET expected_behavior = '' WHERE expected_behavior IS NULL")
+
     # ------------------------------------------------------------------
     # 1. evaluations — renames, nullability fixes, additive columns
     # ------------------------------------------------------------------
@@ -184,6 +193,13 @@ def upgrade() -> None:
     # On PostgreSQL the column would need an explicit USING cast.
     # ------------------------------------------------------------------
     with op.batch_alter_table("test_cases", schema=None) as batch_op:
+        batch_op.alter_column(
+            "expected_behavior",
+            existing_type=sa.Text(),
+            type_=sa.Text(),
+            existing_nullable=True,
+            nullable=False,
+        )
         batch_op.alter_column(
             "evaluation_criteria",
             existing_type=sa.Text(),

@@ -7,7 +7,7 @@ class TestCaseBase(BaseModel):
     """Base schema for test cases."""
 
     input_prompt: str = Field(..., min_length=1, description="Input prompt payload sent to the model")
-    expected_behavior: Optional[str] = Field(None, description="Expected model answer or reasoning behavior")
+    expected_behavior: str = Field(..., description="Expected model answer or reasoning behavior")
     # JSON per database contract — structured scoring / pass-fail criteria
     evaluation_criteria: Optional[Dict[str, Any]] = Field(
         None, description="Structured evaluation criteria for LLM Judge or scoring metric"

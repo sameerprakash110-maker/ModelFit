@@ -21,7 +21,7 @@ class TestCase(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         index=True,
     )
     input_prompt: Mapped[str] = mapped_column(Text, nullable=False)
-    expected_behavior: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    expected_behavior: Mapped[str] = mapped_column(Text, nullable=False)
     # JSON per database contract — stores structured scoring criteria
     evaluation_criteria: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True)
 
@@ -30,7 +30,7 @@ class TestCase(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     evaluations: Mapped[List["Evaluation"]] = relationship(
         "Evaluation",
         back_populates="test_case",
-        cascade="all, delete-orphan",
+        passive_deletes=True,
     )
 
     def __repr__(self) -> str:
