@@ -1,0 +1,47 @@
+@import 'tailwindcss';
+
+/*
+  ModelFit design tokens.
+  The palette comes from a tailor's bench: chalk, tape, ink, paper.
+*/
+@theme static {
+  --color-chalk: #2437e6;
+  --color-chalk-deep: #1a29b4;
+  --color-chalk-pale: #93a2ff;
+  --color-ink: #0d1238;
+  --color-ink-soft: #454c73;
+  --color-tape: #ffd43b;
+  --color-tape-deep: #e2b100;
+  --color-paper: #f4f6fb;
+  --color-tick: #e8452c;
+
+  --font-display: 'Anybody Variable', 'Arial Narrow', 'Helvetica Neue', sans-serif;
+  --font-body: 'Schibsted Grotesk Variable', 'Segoe UI', system-ui, sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  color: var(--color-ink);
+  background: var(--color-paper);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
