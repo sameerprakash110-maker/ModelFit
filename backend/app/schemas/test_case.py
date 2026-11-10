@@ -1,0 +1,36 @@
+from datetime import datetime
+from typing import Optional
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class TestCaseBase(BaseModel):
+    """Base schema for test cases."""
+
+    input_prompt: str = Field(..., min_length=1, description="Input prompt payload sent to the model")
+    expected_behavior: Optional[str] = Field(None, description="Expected model answer or reasoning behavior")
+    evaluation_criteria: Optional[str] = Field(None, description="Criteria for LLM Judge or scoring metric")
+
+
+class TestCaseCreate(TestCaseBase):
+    """Schema for creating a new test case."""
+
+    project_id: str = Field(..., description="ID of the project to associate this test case with")
+
+
+class TestCaseUpdate(BaseModel):
+    """Schema for updating an existing test case."""
+
+    input_prompt: Optional[str] = Field(None, min_length=1)
+    expected_behavior: Optional[str] = None
+    evaluation_criteria: Optional[str] = None
+
+
+class TestCaseResponse(TestCaseBase):
+    """Schema returned for a test case."""
+
+    id: str
+    project_id: str
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
