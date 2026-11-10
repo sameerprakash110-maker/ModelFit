@@ -383,6 +383,7 @@ class TestContractCompliance:
         tc = TestCase(
             project_id=project.id,
             input_prompt="Explain quantum entanglement.",
+        expected_behavior="Describe correlated quantum states.",
             evaluation_criteria=criteria,
         )
         db_session.add(tc)
