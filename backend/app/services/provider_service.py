@@ -22,8 +22,8 @@ class ProviderService:
         },
         "groq": {
             "display_name": "Groq",
-            "description": "Ultra-low-latency LPU-powered inference for open-weight models (Llama, Mixtral).",
-            "default_model": "llama-3.3-70b-versatile",
+            "description": "Ultra-low-latency LPU-powered inference for open-weight models (Qwen, GPT-OSS).",
+            "default_model": "qwen/qwen3.8-27b",
         },
     }
 

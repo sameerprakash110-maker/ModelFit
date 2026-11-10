@@ -1,4 +1,5 @@
 import pytest
+
 from app.providers import get_provider
 from app.providers.gemini import GeminiProvider
 from app.providers.groq import GroqProvider
@@ -7,6 +8,7 @@ from app.providers.openai import OpenAIProvider
 
 def test_provider_factory():
     """Verify that provider factory instantiates correct provider subclasses."""
+
     gemini = get_provider("gemini")
     assert isinstance(gemini, GeminiProvider)
     assert gemini.provider_name == "gemini"
@@ -25,13 +27,16 @@ def test_provider_factory():
 
 @pytest.mark.asyncio
 async def test_provider_mock_generate():
-    """Verify mock generate returns structured ProviderResult for all providers."""
+    """Verify mock generation returns structured ProviderResult for all providers."""
+
     for name in ["gemini", "openai", "groq"]:
         provider = get_provider(name)
+
         result = await provider.generate(
             prompt="Hello world",
             mock=True,
         )
+
         assert result.provider == name
         assert result.is_mock is True
         assert result.content
@@ -40,9 +45,29 @@ async def test_provider_mock_generate():
 
 
 @pytest.mark.asyncio
-async def test_provider_live_generate_raises_not_implemented():
-    """Verify that un-mocked live calls raise NotImplementedError at this architecture stage."""
-    for name in ["gemini", "openai", "groq"]:
-        provider = get_provider(name)
-        with pytest.raises(NotImplementedError):
-            await provider.generate(prompt="Live test", mock=False)
+async def test_openai_live_generate_raises_not_implemented():
+    """Verify OpenAI raises NotImplementedError until live integration is implemented."""
+
+    provider = get_provider("openai")
+
+    with pytest.raises(NotImplementedError):
+        await provider.generate(
+            prompt="Live test",
+            mock=False,
+        )
+
+
+@pytest.mark.asyncio
+async def test_gemini_mock_generate():
+    """Verify Gemini mock generation works without an API key."""
+
+    provider = get_provider("gemini")
+
+    result = await provider.generate(
+        prompt="Hello world",
+        mock=True,
+    )
+
+    assert result.is_mock is True
+    assert result.provider == "gemini"
+    assert result.content
