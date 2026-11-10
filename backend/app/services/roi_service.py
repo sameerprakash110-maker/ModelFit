@@ -197,6 +197,13 @@ class ROIService:
             f"Cost/Req: ${cost_per_req:.6f}."
         )
 
+        # Insufficient sample size notification
+        if primary_metrics.sample_count < 5:
+            rationale += (
+                f" [Caution: Low sample size ({primary_metrics.sample_count} evaluations). "
+                f"Recommendations should be validated with larger benchmark suites.]"
+            )
+
         return ROIRecommendation(
             category=category_applied,
             recommended_primary_model=primary_name,
@@ -215,24 +222,44 @@ class ROIService:
     @classmethod
     def generate_recommendation(
         cls,
-        benchmark_results: List[Dict[str, Any]],
+        benchmark_results: Any = None,
         project_monthly_volume: int = 100_000,
         baseline_model_name: Optional[str] = None,
         target_category: str = "best_value",
     ) -> Dict[str, Any]:
-        """Backwards-compatible API wrapper returning dictionary for legacy callers."""
+        """Backwards-compatible API wrapper dynamically computing recommendations from inputs."""
+        model_metrics: Dict[str, ModelAggregateMetrics] = {}
+
+        if benchmark_results:
+            if isinstance(benchmark_results, dict) and "model_metrics" in benchmark_results:
+                model_metrics = benchmark_results["model_metrics"]
+            elif isinstance(benchmark_results, list) and len(benchmark_results) > 0:
+                first = benchmark_results[0]
+                if isinstance(first, ModelAggregateMetrics):
+                    model_metrics = {m.model_name: m for m in benchmark_results}
+                elif isinstance(first, dict) and "reliability" in first:
+                    for item in benchmark_results:
+                        m = ModelAggregateMetrics(**item)
+                        model_metrics[m.model_name] = m
+                else:
+                    from app.services.aggregation_service import AggregationService
+                    from app.models.evaluation import Evaluation
+                    eval_objs = []
+                    for item in benchmark_results:
+                        if isinstance(item, Evaluation):
+                            eval_objs.append(item)
+                        elif isinstance(item, dict):
+                            eval_objs.append(Evaluation(**item))
+                    if eval_objs:
+                        aggs = AggregationService.aggregate_benchmark_evaluations(eval_objs)
+                        model_metrics = aggs["model_metrics"]
+
         rec = cls.generate_recommendation_from_metrics(
-            model_metrics={},
+            model_metrics=model_metrics,
             baseline_model_name=baseline_model_name,
             monthly_volume=project_monthly_volume,
             target_category=target_category,
         )
         data = rec.model_dump()
-        data["recommended_primary_model"] = "gemini-1.5-flash"
-        data["recommended_fallback_model"] = "gpt-4o"
-        data["estimated_monthly_cost_usd"] = 15.00
-        data["estimated_savings_vs_premium_usd"] = 385.00
-        data["savings_percentage"] = 96.2
-        data["rationale"] = "High quality-to-cost ratio on current test suite; latency < 500ms."
         data["is_placeholder"] = True
         return data
