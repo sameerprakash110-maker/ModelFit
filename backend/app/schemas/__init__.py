@@ -1,12 +1,18 @@
 from app.schemas.benchmark import (
     BenchmarkBase,
     BenchmarkCreate,
+    BenchmarkExecutionSummary,
     BenchmarkResponse,
+    BenchmarkRunRequest,
     BenchmarkUpdate,
 )
 from app.schemas.evaluation import (
+    EvaluationAttemptBase,
+    EvaluationAttemptCreate,
+    EvaluationAttemptResponse,
     EvaluationBase,
     EvaluationCreate,
+    EvaluationDetailResponse,
     EvaluationResponse,
 )
 from app.schemas.project import (
@@ -19,6 +25,18 @@ from app.schemas.provider import (
     ProviderListResponse,
     ProviderModelDetail,
     ProviderResponse,
+)
+from app.schemas.reports import (
+    BenchmarkReportResponse,
+    BenchmarkSummaryResponse,
+    CostMetrics,
+    LatencyMetrics,
+    ModelAggregateMetrics,
+    QualityMetrics,
+    ReliabilityMetrics,
+    ROIRecommendation,
+    ROIReportResponse,
+    TokenMetrics,
 )
 from app.schemas.test_case import (
     TestCaseBase,
@@ -39,6 +57,8 @@ __all__ = [
     "BenchmarkCreate",
     "BenchmarkUpdate",
     "BenchmarkResponse",
+    "BenchmarkRunRequest",
+    "BenchmarkExecutionSummary",
     "TestCaseBase",
     "TestCaseCreate",
     "TestCaseUpdate",
@@ -46,4 +66,18 @@ __all__ = [
     "EvaluationBase",
     "EvaluationCreate",
     "EvaluationResponse",
+    "EvaluationDetailResponse",
+    "EvaluationAttemptBase",
+    "EvaluationAttemptCreate",
+    "EvaluationAttemptResponse",
+    "ReliabilityMetrics",
+    "LatencyMetrics",
+    "TokenMetrics",
+    "CostMetrics",
+    "QualityMetrics",
+    "ModelAggregateMetrics",
+    "ROIRecommendation",
+    "BenchmarkSummaryResponse",
+    "BenchmarkReportResponse",
+    "ROIReportResponse",
 ]

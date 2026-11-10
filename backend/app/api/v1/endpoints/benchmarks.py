@@ -1,8 +1,17 @@
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
+
 from app.core.database import get_db
-from app.schemas.benchmark import BenchmarkCreate, BenchmarkResponse, BenchmarkUpdate
+from app.schemas.benchmark import (
+    BenchmarkCreate,
+    BenchmarkExecutionSummary,
+    BenchmarkResponse,
+    BenchmarkRunRequest,
+    BenchmarkUpdate,
+)
+from app.schemas.reports import BenchmarkSummaryResponse
+from app.services.aggregation_service import AggregationService
 from app.services.benchmark_service import BenchmarkService
 
 router = APIRouter()
@@ -62,3 +71,70 @@ def update_benchmark(
 ) -> BenchmarkResponse:
     """Update status (e.g. pending, running, completed, failed) or metadata of a benchmark."""
     return BenchmarkService.update_benchmark(db, benchmark_id, benchmark_in)
+
+
+@router.post(
+    "/{benchmark_id}/run",
+    response_model=BenchmarkExecutionSummary,
+    summary="Execute a benchmark suite",
+)
+async def run_benchmark(
+    benchmark_id: str,
+    run_req: Optional[BenchmarkRunRequest] = None,
+    db: Session = Depends(get_db),
+) -> BenchmarkExecutionSummary:
+    """Execute the benchmark matrix across selected models and project test cases."""
+    req = run_req or BenchmarkRunRequest()
+    return await BenchmarkService.run_benchmark(
+        benchmark_id=benchmark_id,
+        mock=req.mock,
+        judge_enabled=req.judge_enabled,
+        max_concurrency=req.max_concurrency,
+        judge_provider=req.judge_provider,
+        judge_model=req.judge_model,
+        db=db,
+    )
+
+
+@router.get(
+    "/{benchmark_id}/summary",
+    response_model=BenchmarkSummaryResponse,
+    summary="Get high-level benchmark execution summary",
+)
+def get_benchmark_summary(
+    benchmark_id: str,
+    db: Session = Depends(get_db),
+) -> BenchmarkSummaryResponse:
+    """Retrieve high-level summary and evaluation aggregates for a benchmark run."""
+    benchmark = BenchmarkService.get_benchmark_or_404(db, benchmark_id)
+    aggregates = AggregationService.get_aggregated_benchmark_results(db, benchmark_id)
+
+    model_summaries: Dict[str, Dict[str, Any]] = {}
+    for model_name, m in aggregates["model_metrics"].items():
+        model_summaries[model_name] = {
+            "provider": m.provider_name,
+            "sample_count": m.sample_count,
+            "success_rate": m.reliability.success_rate,
+            "avg_latency_ms": m.performance.average_latency,
+            "total_cost_usd": m.financial.total_execution_cost,
+            "avg_judge_score": m.quality.average_judge_score,
+        }
+
+    rel = aggregates["overall_reliability"]
+    fin = aggregates["overall_financial"]
+
+    return BenchmarkSummaryResponse(
+        benchmark_id=benchmark.id,
+        project_id=benchmark.project_id,
+        name=benchmark.name,
+        status=benchmark.status,
+        selected_models=benchmark.selected_models,
+        baseline_model=benchmark.baseline_model,
+        repeats=benchmark.repeats,
+        completed_at=benchmark.completed_at,
+        total_evaluations=rel.total_evaluations,
+        successful_evaluations=rel.successful_evaluations,
+        failed_evaluations=rel.failed_evaluations,
+        total_cost_usd=fin.total_execution_cost,
+        model_summaries=model_summaries,
+    )

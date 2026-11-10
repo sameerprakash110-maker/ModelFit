@@ -11,7 +11,11 @@ from sqlalchemy.pool import StaticPool
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from app.core.database import Base, get_db
+from app.models.test_case import TestCase
 from app.main import app
+
+# Prevent pytest from attempting to collect the TestCase SQLAlchemy model as a test suite
+TestCase.__test__ = False
 
 # Isolated in-memory SQLite database for testing to ensure dev database is never modified
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"

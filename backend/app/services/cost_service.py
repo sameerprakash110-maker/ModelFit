@@ -6,7 +6,11 @@ class CostService:
 
     # Model pricing table: (input_cost_per_million_tokens, output_cost_per_million_tokens)
     PRICING_TABLE: Dict[str, Tuple[float, float]] = {
-        # Google Gemini
+        # Google Gemini 3.x
+        "gemini-3.1-flash-lite": (0.075, 0.30),
+        "gemini-3.8-flash": (0.15, 0.60),
+        "gemini-3.5-flash": (0.15, 0.60),
+        # Google Gemini 1.5 & 2.0
         "gemini-2.0-flash-exp": (0.00, 0.00),
         "gemini-1.5-pro": (1.25, 5.00),
         "gemini-1.5-flash": (0.075, 0.30),

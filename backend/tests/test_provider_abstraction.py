@@ -41,8 +41,8 @@ async def test_provider_mock_generate():
 
 @pytest.mark.asyncio
 async def test_provider_live_generate_raises_not_implemented():
-    """Verify that un-mocked live calls raise NotImplementedError at this architecture stage."""
+    """Verify that un-mocked live calls raise NotImplementedError (or ValueError if unconfigured) at this architecture stage."""
     for name in ["gemini", "openai", "groq"]:
         provider = get_provider(name)
-        with pytest.raises(NotImplementedError):
+        with pytest.raises((NotImplementedError, ValueError)):
             await provider.generate(prompt="Live test", mock=False)
