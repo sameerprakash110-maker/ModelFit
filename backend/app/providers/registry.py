@@ -1,14 +1,14 @@
 from typing import Dict
 
+from app.core.config import get_settings
 from app.providers.base import BaseLLMProvider
-
+from app.providers.gemini import GeminiProvider
+from app.providers.groq import GroqProvider
 
 _provider_registry: Dict[str, BaseLLMProvider] = {}
 
 
 def register_provider(provider: BaseLLMProvider):
-    """Register an AI provider."""
-
     name = provider.provider_name.lower()
 
     if not name:
@@ -18,10 +18,7 @@ def register_provider(provider: BaseLLMProvider):
 
 
 def get_provider(provider_name: str) -> BaseLLMProvider:
-    """Retrieve a registered AI provider."""
-
     name = provider_name.lower()
-
     provider = _provider_registry.get(name)
 
     if provider is None:
@@ -31,14 +28,16 @@ def get_provider(provider_name: str) -> BaseLLMProvider:
 
 
 def get_all_providers() -> Dict[str, BaseLLMProvider]:
-    """Return all registered providers."""
-
     return _provider_registry.copy()
 
 
 def initialize_providers():
-    """Initialize and register all supported providers."""
+    settings = get_settings()
 
-    from app.providers.gemini import GeminiProvider
+    register_provider(
+        GeminiProvider(api_key=settings.GEMINI_API_KEY)
+    )
 
-    register_provider(GeminiProvider())
+    register_provider(
+        GroqProvider(api_key=settings.GROQ_API_KEY)
+    )

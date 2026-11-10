@@ -15,11 +15,6 @@ class ProviderService:
             "description": "Next-generation multimodal reasoning and long-context LLMs by Google DeepMind.",
             "default_model": "gemini-3.1-flash-lite",
         },
-        "openai": {
-            "display_name": "OpenAI",
-            "description": "Industry benchmark reasoning and general-purpose LLMs (GPT-4o, o1-series).",
-            "default_model": "gpt-4o",
-        },
         "groq": {
             "display_name": "Groq",
             "description": "Ultra-low-latency LPU-powered inference for open-weight models (Qwen, GPT-OSS).",
@@ -32,8 +27,6 @@ class ProviderService:
         settings = get_settings()
         if provider_name == "gemini":
             return bool(settings.GEMINI_API_KEY and settings.GEMINI_API_KEY.strip())
-        elif provider_name == "openai":
-            return bool(settings.OPENAI_API_KEY and settings.OPENAI_API_KEY.strip())
         elif provider_name == "groq":
             return bool(settings.GROQ_API_KEY and settings.GROQ_API_KEY.strip())
         return False

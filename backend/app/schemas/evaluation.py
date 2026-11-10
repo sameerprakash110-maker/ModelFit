@@ -37,7 +37,7 @@ class EvaluationBase(BaseModel):
     """Base schema for evaluation results aligned with current database contract."""
 
     model_name: str = Field(..., description="Evaluated model identifier")
-    provider_name: str = Field(..., description="Provider identifier (gemini, openai, groq)")
+    provider_name: str = Field(..., description="Provider identifier (gemini, groq)")
     input_tokens: int = Field(0, ge=0, description="Number of tokens consumed by the prompt")
     output_tokens: int = Field(0, ge=0, description="Number of tokens generated in response")
     execution_cost: Decimal = Field(Decimal("0"), description="Calculated monetary cost in USD")
