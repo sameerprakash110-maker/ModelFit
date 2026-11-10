@@ -43,7 +43,7 @@ export function scoreConfigurations(
   weights: Weights,
   thresholds: Thresholds,
 ): ScoredConfiguration[] {
-  const ruledOutBy = (result: ConfigurationResult) =>
+  const ruledOutBy = (result: ConfigurationResult): ScoredConfiguration['ruledOutBy'] =>
     result.success < thresholds.minSuccess ? 'success' : result.quality < thresholds.minQuality ? 'quality' : null
 
   const eligible = results.filter((result) => ruledOutBy(result) === null)
@@ -51,7 +51,7 @@ export function scoreConfigurations(
   const fastest = Math.min(...eligible.map((result) => result.latencyP95))
   const totalWeight = weights.success + weights.quality + weights.cost + weights.speed
 
-  const scored = results.map((result) => {
+  const scored = results.map((result): ScoredConfiguration => {
     const reason = ruledOutBy(result)
     if (reason) return { ...result, ruledOutBy: reason, overall: null, isBestFit: false }
 

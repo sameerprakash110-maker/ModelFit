@@ -13,6 +13,8 @@ const PRODUCT_LINKS = [
   { href: '/#reading', label: 'Reading a Benchmark' },
 ]
 
+const YEAR = new Date().getFullYear()
+
 export function SiteFooter() {
   return (
     <footer className="site-footer">
@@ -67,7 +69,7 @@ export function SiteFooter() {
       </div>
 
       <div className="wrap site-footer-base">
-        <p>© {new Date().getFullYear()} ModelFit. Built for PS-21, AI model benchmarking on company workloads.</p>
+        <p>© {YEAR} ModelFit. Built for PS-21, AI model benchmarking on company workloads.</p>
       </div>
     </footer>
   )

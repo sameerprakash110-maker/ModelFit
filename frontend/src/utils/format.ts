@@ -21,11 +21,12 @@ function rupees(value: number, fractionDigits: number): string {
 /** Whole rupees, for monthly totals: ₹5,15,450. */
 export const formatRupees = (value: number) => rupees(value, 0)
 
-/** Small per-unit amounts, with more decimals the smaller the amount: ₹1.03, ₹0.433. */
+/** Small per-unit amounts, with more decimals the smaller the amount: ₹1.03, ₹0.50, ₹0.043. */
 export function formatUnitRupees(value: number): string {
   const size = Math.abs(value)
   if (size >= 1000) return rupees(value, 0)
-  if (size >= 1) return rupees(value, 2)
+  if (size >= 100) return rupees(value, Math.abs(value - Math.round(value)) < 0.005 ? 0 : 2)
+  if (size >= 0.1) return rupees(value, 2)
   if (size >= 0.01) return rupees(value, 3)
   return rupees(value, 4)
 }

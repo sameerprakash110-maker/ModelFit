@@ -15,6 +15,12 @@ interface HangTagProps {
   tilt: number
 }
 
+/* A share that would round up to 100% is written as "Over 99.9%", so a few failures are never hidden. */
+function describeShare(share: number): string {
+  if (share < 1 && share > 0.999) return 'Over 99.9%'
+  return formatPercent(share)
+}
+
 /** A price tag on the rack: the advertised price, and what a successful task really comes to. */
 export function HangTag({ name, variant, stickerPer1k, estimate, maxAttempts, stamp, tilt }: HangTagProps) {
   const finishing = estimate ? estimate.eventualSuccess : null
@@ -49,7 +55,7 @@ export function HangTag({ name, variant, stickerPer1k, estimate, maxAttempts, st
                 <span style={{ width: `${finishing * 100}%` }} />
               </div>
               <p>
-                {formatPercent(finishing, finishing > 0.999 && finishing < 1 ? 2 : 1)} of tasks succeed within{' '}
+                {describeShare(finishing)} of tasks succeed within{' '}
                 {maxAttempts} {maxAttempts === 1 ? 'attempt' : 'attempts'}
               </p>
             </div>

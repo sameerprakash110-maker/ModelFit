@@ -1,230 +1,21 @@
 /*
-  Landing page. Everything here is scoped under .lp.
-  Vocabulary: chalk (blue), tape (yellow), ink (navy), paper, tick (red).
+  Landing page sections, in page order. Shared pieces (type, buttons, tape,
+  form controls, top bar, footer) are in src/styles/site.css.
 */
-
-.lp {
-  font-family: var(--font-body);
-  font-size: 1.0625rem;
-  line-height: 1.6;
-  color: var(--color-ink);
-  background: var(--color-paper);
-  overflow-x: clip;
-}
-
-.lp .wrap {
-  width: min(100% - 2.5rem, 76rem);
-  margin-inline: auto;
-}
-
-.lp :focus-visible {
-  outline: 3px solid var(--color-tick);
-  outline-offset: 3px;
-}
-
-/* ---------- Type ---------- */
-
-.lp .h2 {
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-variation-settings: 'wdth' 112;
-  font-size: clamp(2.1rem, 5.2vw, 4rem);
-  line-height: 0.98;
-  letter-spacing: -0.01em;
-  text-wrap: balance;
-}
-
-.lp .h3 {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-variation-settings: 'wdth' 92;
-  font-size: 1.5rem;
-  line-height: 1.15;
-}
-
-.lp .lede {
-  font-size: clamp(1.1rem, 1.6vw, 1.3rem);
-  line-height: 1.5;
-  max-width: 38em;
-}
-
-.lp .section-head {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 1.25rem;
-  margin-bottom: clamp(2.5rem, 6vw, 4.5rem);
-}
-
-/* ---------- Wordmark ---------- */
-
-.lp .wordmark {
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-size: 1.5rem;
-  line-height: 1;
-  letter-spacing: -0.01em;
-  white-space: nowrap;
-}
-
-/* ---------- Buttons and links ---------- */
-
-/* A button is a sewn-on label: solid cloth, a line of stitching inside the edge. */
-.lp .btn {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem 1.6rem;
-  background: var(--color-tape);
-  color: var(--color-ink);
-  font-weight: 700;
-  font-size: 1.0625rem;
-  line-height: 1.2;
-  border-radius: 2px;
-  text-decoration: none;
-  transition: background-color 140ms ease;
-}
-
-.lp .btn::after {
-  content: '';
-  position: absolute;
-  inset: 5px;
-  border: 1.5px dashed var(--color-ink);
-  border-radius: 1px;
-  pointer-events: none;
-  transition: inset 140ms ease;
-}
-
-.lp .btn:hover {
-  background: #ffe27a;
-}
-
-.lp .btn:hover::after {
-  inset: 3px;
-}
-
-.lp .btn:active::after {
-  inset: 7px;
-}
-
-.lp .btn--small {
-  padding: 0.7rem 1.1rem;
-  font-size: 0.95rem;
-}
-
-.lp .stitch-link {
-  color: inherit;
-  font-weight: 600;
-  text-decoration: none;
-  padding-bottom: 3px;
-  border-bottom: 2px dashed currentColor;
-}
-
-.lp .stitch-link:hover {
-  border-bottom-style: solid;
-}
-
-/* ---------- Tape ---------- */
-
-.lp .tape {
-  --ppu: 12px;
-  position: relative;
-  height: 58px;
-  background-color: var(--color-tape);
-  background-image:
-    repeating-linear-gradient(90deg, var(--color-ink) 0 2px, transparent 2px calc(var(--ppu) * 10)),
-    repeating-linear-gradient(90deg, var(--color-ink) 0 2px, transparent 2px calc(var(--ppu) * 5)),
-    repeating-linear-gradient(90deg, var(--color-ink) 0 1px, transparent 1px var(--ppu));
-  background-size:
-    100% 44%,
-    100% 30%,
-    100% 18%;
-  background-repeat: no-repeat;
-  border-block: 1px solid var(--color-tape-deep);
-}
-
-.lp .tape-num {
-  position: absolute;
-  bottom: 3px;
-  transform: translateX(-50%);
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-variation-settings: 'wdth' 80;
-  font-size: 0.95rem;
-  line-height: 1;
-  color: var(--color-ink);
-  font-variant-numeric: tabular-nums;
-  user-select: none;
-}
-
-.lp .scroll-tape {
-  position: absolute;
-  left: -6vw;
-  right: -6vw;
-  bottom: -30px;
-  z-index: 5;
-  transform: rotate(-2.2deg);
-  pointer-events: none;
-  filter: drop-shadow(0 10px 0 rgb(13 18 56 / 0.22));
-}
-
-.lp .scroll-tape-inner {
-  width: max-content;
-  will-change: transform;
-}
 
 /* ---------- Hero ---------- */
 
 .lp .hero {
+  --focus: var(--color-tape);
   position: relative;
   background: var(--color-chalk);
   color: #fff;
-  padding-bottom: clamp(6.5rem, 11vw, 9rem);
+  padding-bottom: clamp(7rem, 12vw, 10rem);
   overflow-x: clip;
 }
 
-.lp .hero-nav {
-  display: flex;
-  align-items: center;
-  gap: 2rem;
-  padding-block: 1.25rem;
-}
-
-.lp .hero-logo {
-  color: inherit;
-  text-decoration: none;
-  margin-right: auto;
-}
-
-.lp .hero-links {
-  display: none;
-  gap: 2rem;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  font-weight: 600;
-  font-size: 0.98rem;
-}
-
-.lp .hero-links a {
-  color: inherit;
-  text-decoration: none;
-  padding-block: 0.35rem;
-  border-bottom: 2px dashed transparent;
-}
-
-.lp .hero-links a:hover {
-  border-bottom-color: currentColor;
-}
-
-@media (min-width: 52rem) {
-  .lp .hero-links {
-    display: flex;
-  }
-}
-
 .lp .hero-measure {
-  margin-top: clamp(1.5rem, 5vh, 3.5rem);
+  padding-top: clamp(1.25rem, 4vh, 2.75rem);
 }
 
 /* The fitted block. Its dashed edges are the measure the type is fitted to. */
@@ -241,8 +32,8 @@
 .lp .hero-fit::after {
   content: '';
   position: absolute;
-  top: -1.25rem;
-  bottom: -1.75rem;
+  top: -1rem;
+  bottom: -1.5rem;
   border-left: 1px dashed rgb(255 255 255 / 0.5);
 }
 
@@ -260,7 +51,7 @@
   gap: 0.9rem;
   height: 1.5rem;
   margin: 0 0 0.9rem;
-  font-size: 0.875rem;
+  font-size: 0.9rem;
   font-weight: 500;
   white-space: nowrap;
   color: rgb(255 255 255 / 0.92);
@@ -296,14 +87,21 @@
 .lp .hero-foot {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 2rem;
-  margin-top: clamp(2.25rem, 5vw, 3.5rem);
+  gap: 3rem;
+  margin-top: clamp(2.5rem, 5vw, 3.75rem);
+}
+
+.lp .hero-pitch {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.75rem;
+  align-content: start;
 }
 
 .lp .hero-lede {
   margin: 0;
-  max-width: 34em;
-  font-size: clamp(1.1rem, 1.7vw, 1.35rem);
+  max-width: 32em;
+  font-size: clamp(1.15rem, 1.7vw, 1.4rem);
   line-height: 1.45;
 }
 
@@ -314,14 +112,129 @@
   gap: 1.25rem 2rem;
 }
 
-@media (min-width: 60rem) {
-  .lp .hero-foot {
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: end;
+/* The trap in one picture: two models, measured twice against the same tape. */
+.lp .hero-figure {
+  margin: 0;
+}
+
+.lp .hero-figure-groups {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.75rem;
+}
+
+.lp .hero-figure-title {
+  display: grid;
+  gap: 0.15rem;
+  margin: 0 0 0.9rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.lp .hero-figure-title strong {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-variation-settings: 'wdth' 96;
+  font-size: 1.6rem;
+  line-height: 1.1;
+}
+
+.lp .hero-figure ul {
+  display: grid;
+  gap: 0.85rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lp .hero-figure li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.25rem 0.75rem;
+  align-items: baseline;
+  font-size: 0.95rem;
+  line-height: 1.3;
+}
+
+.lp .hero-figure-value {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-variation-settings: 'wdth' 92;
+  font-size: 1.05rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.lp .hero-figure-bar {
+  grid-column: 1 / -1;
+  height: 20px;
+  background-image:
+    repeating-linear-gradient(90deg, var(--color-ink) 0 2px, transparent 2px 50px),
+    repeating-linear-gradient(90deg, var(--color-ink) 0 1px, transparent 1px 10px);
+  background-size:
+    100% 62%,
+    100% 34%;
+  background-repeat: no-repeat;
+}
+
+.lp .hero-figure-bar--current {
+  background-color: #fff;
+}
+
+.lp .hero-figure-bar--candidate {
+  background-color: var(--color-tape);
+}
+
+.lp .hero-figure figcaption {
+  margin-top: 1.25rem;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  color: rgb(255 255 255 / 0.88);
+}
+
+.lp .hero-figure figcaption a {
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  border-bottom: 2px dashed currentColor;
+}
+
+.lp .hero-figure figcaption a:hover {
+  border-bottom-style: solid;
+}
+
+@media (min-width: 40rem) {
+  .lp .hero-figure-groups {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2.25rem;
   }
 }
 
-/* ---------- The trap ---------- */
+@media (min-width: 66rem) {
+  .lp .hero-foot {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+    gap: 4.5rem;
+    align-items: start;
+  }
+}
+
+.lp .scroll-tape {
+  position: absolute;
+  left: -6vw;
+  right: -6vw;
+  bottom: -30px;
+  z-index: 5;
+  transform: rotate(-2.2deg);
+  pointer-events: none;
+  filter: drop-shadow(0 10px 0 rgb(13 18 56 / 0.22));
+}
+
+.lp .scroll-tape-inner {
+  width: max-content;
+  will-change: transform;
+}
+
+/* ---------- The cheaper model trap ---------- */
 
 .lp .trap {
   padding-block: clamp(7rem, 13vw, 11rem) clamp(4.5rem, 9vw, 7.5rem);
@@ -333,28 +246,22 @@
   gap: 3.5rem;
 }
 
-@media (min-width: 64rem) {
-  .lp .trap-grid {
-    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
-    gap: 5rem;
-    align-items: start;
-  }
-}
-
 .lp .trap-controls {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 2.25rem;
+  gap: 2.5rem;
 }
 
-.lp .trap-model {
+.lp .trap-model,
+.lp .trap-scenario {
   min-width: 0;
   margin: 0;
   padding: 0;
   border: 0;
 }
 
-.lp .trap-model legend {
+.lp .trap-model legend,
+.lp .trap-scenario legend {
   display: flex;
   align-items: center;
   gap: 0.65rem;
@@ -367,144 +274,71 @@
   line-height: 1.15;
 }
 
-.lp .swatch {
-  flex: none;
-  display: inline-block;
-  width: 0.95rem;
-  height: 0.95rem;
-  border: 2px solid var(--color-ink);
+.lp .trap-scenario-fields,
+.lp .token-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem 1.5rem;
 }
 
-.lp .swatch--current {
-  background: #fff;
+.lp .trap-scenario-fields {
+  margin-bottom: 1.5rem;
 }
 
-.lp .swatch--candidate {
-  background: var(--color-tape);
+@media (max-width: 26rem) {
+  .lp .trap-scenario-fields,
+  .lp .token-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
-.lp .field-label {
-  display: block;
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--color-ink-soft);
+.lp .token-result {
+  margin: 1rem 0 0;
+  font-size: 0.98rem;
 }
 
-.lp .num {
-  display: flex;
-  align-items: baseline;
-  gap: 0.3rem;
-  max-width: 14rem;
-  margin-top: 0.15rem;
-  border-bottom: 2px solid var(--color-ink);
+.lp .token-result strong {
   font-family: var(--font-display);
   font-weight: 700;
   font-variation-settings: 'wdth' 90;
-  font-size: 1.75rem;
-  line-height: 1.3;
+  font-size: 1.25rem;
 }
 
-.lp .num input {
-  width: 100%;
-  min-width: 0;
-  padding: 0;
-  border: 0;
-  background: none;
-  font: inherit;
-  font-variation-settings: inherit;
-  color: inherit;
-  font-variant-numeric: tabular-nums;
-}
-
-.lp .num input:focus {
-  outline: none;
-}
-
-.lp .num:focus-within {
-  border-bottom-color: var(--color-chalk);
-  box-shadow: 0 2px 0 var(--color-chalk);
-}
-
-.lp .num.is-invalid {
-  border-bottom-color: var(--color-tick);
-}
-
-.lp .field-error {
-  margin: 0.35rem 0 0;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #b92d17;
+.lp .trap-model > .field {
+  max-width: 15rem;
 }
 
 .lp .slider-head {
   display: flex;
-  align-items: baseline;
+  align-items: flex-end;
   justify-content: space-between;
   gap: 1rem;
-  margin: 1.25rem 0 0.4rem;
+  margin: 1.4rem 0 0.55rem;
 }
 
-.lp .slider-value {
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-variation-settings: 'wdth' 100;
-  font-size: 1.75rem;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-}
-
-.lp .tape-slider {
-  position: relative;
-  height: 58px;
-  overflow: hidden;
-  cursor: grab;
-  touch-action: pan-y;
-  user-select: none;
-  background: #e3e7f2;
-  border-radius: 2px;
-  box-shadow: 0 5px 0 rgb(13 18 56 / 0.14);
-}
-
-.lp .tape-slider.is-dragging {
-  cursor: grabbing;
-}
-
-.lp .tape-slider-strip {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  transition: transform 140ms ease-out;
-}
-
-.lp .tape-slider.is-dragging .tape-slider-strip {
-  transition: none;
-}
-
-.lp .tape-needle {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 50%;
-  width: 3px;
-  margin-left: -1px;
-  background: var(--color-tick);
-  pointer-events: none;
-}
-
-.lp .tape-needle::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  border: 7px solid transparent;
-  border-top: 9px solid var(--color-tick);
+.lp .trap-controls-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1.5rem;
+  margin-top: -0.75rem;
 }
 
 .lp .trap-hint {
-  margin: -0.75rem 0 0;
-  font-size: 0.9rem;
+  margin: 0;
+  font-size: 0.92rem;
   color: var(--color-ink-soft);
+}
+
+.lp .estimate-flag {
+  display: inline-block;
+  margin: 0 0 1.75rem;
+  padding: 0.35rem 0.7rem;
+  border: 1.5px dashed var(--color-ink);
+  font-size: 0.92rem;
+  font-weight: 600;
+  line-height: 1.35;
 }
 
 /* The rack: a rail with two price tags hanging from it. */
@@ -619,16 +453,21 @@
   display: inline-block;
   margin: 0.8rem 0 0;
   padding: 0.2rem 0.55rem;
-  border: 2.5px solid #c8321b;
+  border: 2.5px solid var(--bad);
   border-radius: 3px;
   background: #fff;
-  color: #c8321b;
+  color: var(--bad);
   font-family: var(--font-display);
   font-weight: 800;
-  font-variation-settings: 'wdth' 110;
-  font-size: 0.9rem;
+  font-variation-settings: 'wdth' 100;
+  font-size: 0.92rem;
   line-height: 1.2;
   transform: rotate(-4deg);
+}
+
+.lp .tag-stamp--warn {
+  border-color: var(--color-ink);
+  color: var(--color-ink);
 }
 
 .lp .tag-rows {
@@ -637,14 +476,16 @@
   margin: 1.2rem 0 0;
 }
 
-.lp .tag-rows dt {
-  font-size: 0.85rem;
+.lp .tag-rows dt,
+.lp .tag-finish p {
+  font-size: 0.9rem;
   font-weight: 600;
   line-height: 1.3;
   color: var(--color-ink-soft);
 }
 
-.lp .tag--candidate .tag-rows dt {
+.lp .tag--candidate .tag-rows dt,
+.lp .tag--candidate .tag-finish p {
   color: #4b4420;
 }
 
@@ -667,7 +508,7 @@
 .lp .tag-rows dd.tag-real {
   font-weight: 800;
   font-variation-settings: 'wdth' 100;
-  font-size: clamp(1.7rem, 3.6vw, 2.6rem);
+  font-size: clamp(1.8rem, 3.8vw, 2.8rem);
   line-height: 1.05;
 }
 
@@ -678,49 +519,483 @@
   font-weight: 500;
   font-variation-settings: normal;
   font-variant-numeric: normal;
-  font-size: 0.82rem;
+  font-size: 0.88rem;
   line-height: 1.3;
 }
 
-.lp .trap-verdict {
-  margin-top: 2.5rem;
+/* How many tasks get finished within the attempt limit. */
+.lp .tag-finish {
+  margin-top: 1.2rem;
 }
 
-.lp .trap-headline {
+.lp .tag-finish-bar {
+  height: 12px;
+  border: 2px solid var(--color-ink);
+  background: repeating-linear-gradient(135deg, var(--bad) 0 4px, #fff 4px 8px);
+}
+
+.lp .tag-finish-bar span {
+  display: block;
+  height: 100%;
+  background: var(--color-ink);
+  transition: width 200ms ease;
+}
+
+.lp .tag-finish p {
+  margin: 0.45rem 0 0;
+}
+
+.lp .trap-verdict {
+  margin-top: 2.25rem;
+}
+
+/* The one-line reading of the estimate, colour-coded by outcome. */
+.lp .signal {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 1rem 1.1rem;
+  align-items: start;
+}
+
+.lp .signal-icon {
+  display: grid;
+  place-items: center;
+  width: 3.1rem;
+  height: 3.1rem;
+  border: 2px solid var(--color-ink);
+  border-radius: 2px;
+  background: var(--color-ink);
+  color: #fff;
+}
+
+.lp .signal-icon svg {
+  width: 1.7rem;
+  height: 1.7rem;
+}
+
+.lp .signal--bad .signal-icon {
+  border-color: var(--bad);
+  background: var(--bad);
+}
+
+.lp .signal--good .signal-icon {
+  border-color: var(--color-chalk);
+  background: var(--color-chalk);
+}
+
+.lp .signal--warn .signal-icon {
+  background: var(--color-tape);
+  color: var(--color-ink);
+}
+
+.lp .signal-headline {
   margin: 0;
   font-family: var(--font-display);
   font-weight: 800;
   font-variation-settings: 'wdth' 86;
-  font-size: clamp(1.7rem, 3.3vw, 2.6rem);
-  line-height: 1.05;
+  font-size: clamp(1.5rem, 2.7vw, 2.15rem);
+  line-height: 1.08;
   text-wrap: balance;
 }
 
-.lp .trap-headline.is-trap {
-  color: #c8321b;
+.lp .signal--bad .signal-headline {
+  color: var(--bad);
 }
 
-.lp .trap-headline.is-saving {
+.lp .signal--good .signal-headline {
   color: var(--color-chalk);
 }
 
-.lp .trap-headline.is-incomplete {
-  font-size: 1.4rem;
+.lp .signal-detail {
+  margin: 0.75rem 0 0;
+}
+
+.lp .signal-empty {
+  margin: 0;
+  font-weight: 600;
   color: var(--color-ink-soft);
 }
 
-.lp .trap-detail {
-  margin: 0.9rem 0 0;
-  max-width: 36em;
+/* Figures and break-even, under the calculator. */
+.lp .trap-breakdown {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 3rem;
+  margin-top: clamp(3rem, 6vw, 4.5rem);
 }
 
-.lp .trap-footnote {
-  max-width: 44em;
-  margin: clamp(3rem, 6vw, 4.5rem) 0 0;
-  padding-top: 1.1rem;
-  border-top: 1.5px dashed rgb(13 18 56 / 0.35);
+.lp .trap-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-variant-numeric: tabular-nums;
+}
+
+.lp .trap-table caption {
+  caption-side: top;
+  padding-bottom: 0.9rem;
+  text-align: left;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-variation-settings: 'wdth' 92;
+  font-size: 1.5rem;
+  line-height: 1.15;
+}
+
+.lp .trap-table thead th {
+  padding: 0 1rem 0.6rem 0;
+  border-bottom: 2px solid var(--color-ink);
+  font-size: 0.95rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.lp .trap-table thead td {
+  border-bottom: 2px solid var(--color-ink);
+}
+
+.lp .trap-table thead .swatch {
+  margin-right: 0.45rem;
+  vertical-align: -0.1em;
+}
+
+.lp .trap-table tbody tr {
+  border-bottom: 1.5px dashed rgb(13 18 56 / 0.3);
+}
+
+.lp .trap-table tbody th {
+  padding: 0.85rem 1rem 0.85rem 0;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.lp .trap-table tbody td {
+  padding: 0.85rem 1rem 0.85rem 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-variation-settings: 'wdth' 90;
+  font-size: 1.15rem;
+  white-space: nowrap;
+}
+
+.lp .trap-table td.is-good {
+  color: var(--color-chalk);
+}
+
+.lp .trap-table td.is-bad {
+  color: var(--bad);
+}
+
+@media (max-width: 44rem) {
+  .lp .trap-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .lp .trap-table tbody tr {
+    display: block;
+    padding: 0.9rem 0;
+  }
+
+  .lp .trap-table tbody tr:first-child {
+    border-top: 2px solid var(--color-ink);
+  }
+
+  .lp .trap-table tbody th {
+    display: block;
+    padding: 0 0 0.35rem;
+  }
+
+  .lp .trap-table tbody td {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+    padding: 0.15rem 0;
+    white-space: normal;
+    text-align: right;
+  }
+
+  .lp .trap-table tbody td::before {
+    content: attr(data-label);
+    font-family: var(--font-body);
+    font-weight: 500;
+    font-variation-settings: normal;
+    font-size: 0.95rem;
+    color: var(--color-ink-soft);
+  }
+}
+
+.lp .break-even p {
+  margin: 0.75rem 0 0;
+}
+
+.lp .break-even ul {
+  display: grid;
+  gap: 0.9rem;
+  margin: 1.1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lp .break-even li {
+  position: relative;
+  padding-left: 1.6rem;
+}
+
+/* A tape tick as the bullet. */
+.lp .break-even li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.3em;
+  width: 0.7rem;
+  height: 1rem;
+  background: var(--color-tape);
+  border-left: 2px solid var(--color-ink);
+}
+
+.lp .break-even strong {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-variation-settings: 'wdth' 92;
+  font-size: 1.15em;
+}
+
+.lp .break-even .break-even-note {
   font-size: 0.95rem;
   color: var(--color-ink-soft);
+}
+
+/* The assumptions and the sums. */
+.lp .assumptions {
+  margin-top: clamp(3rem, 6vw, 4.5rem);
+  padding-top: 1.4rem;
+  border-top: 1.5px dashed rgb(13 18 56 / 0.4);
+}
+
+.lp .assumptions summary {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: fit-content;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-variation-settings: 'wdth' 92;
+  font-size: 1.5rem;
+  line-height: 1.15;
+  list-style: none;
+  cursor: pointer;
+}
+
+.lp .assumptions summary::-webkit-details-marker {
+  display: none;
+}
+
+.lp .assumptions summary::after {
+  content: '+';
+  display: grid;
+  place-items: center;
+  width: 1.8rem;
+  height: 1.8rem;
+  border: 2px solid var(--color-ink);
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.lp .assumptions[open] summary::after {
+  content: '−';
+}
+
+.lp .assumptions-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2rem;
+  margin-top: 1.75rem;
+}
+
+.lp .assumptions h3 {
+  margin: 0 0 0.6rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.lp .assumptions ul {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0 0 1.75rem;
+  padding-left: 1.15rem;
+  list-style: square;
+}
+
+.lp .assumptions ul:last-child {
+  margin-bottom: 0;
+}
+
+.lp .formulas {
+  margin: 0;
+  border-top: 2px solid var(--color-ink);
+}
+
+.lp .formulas div {
+  padding: 0.75rem 0;
+  border-bottom: 1.5px dashed rgb(13 18 56 / 0.3);
+}
+
+.lp .formulas dt {
+  font-weight: 700;
+}
+
+.lp .formulas dd {
+  margin: 0.1rem 0 0;
+  color: var(--color-ink-soft);
+}
+
+@media (min-width: 64rem) {
+  .lp .trap-grid {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: 5rem;
+    align-items: start;
+  }
+
+  .lp .trap-breakdown {
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    gap: 5rem;
+    align-items: start;
+  }
+
+  .lp .assumptions-body {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 5rem;
+  }
+}
+
+/* While you edit the inputs on a tall enough screen, the result stays in view. */
+@media (min-width: 64rem) and (min-height: 50rem) {
+  .lp .trap-result {
+    position: sticky;
+    top: 5rem;
+  }
+}
+
+/* ---------- Why ModelFit ---------- */
+
+.lp .why {
+  --focus: var(--color-tape);
+  padding-block: clamp(4.5rem, 9vw, 7.5rem);
+  background: var(--color-ink);
+  color: #fff;
+}
+
+.lp .versus {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.lp .versus thead th {
+  padding: 0 1.75rem 1rem 0;
+  border-bottom: 2px solid #fff;
+  vertical-align: bottom;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-variation-settings: 'wdth' 104;
+  font-size: clamp(1.3rem, 2.2vw, 1.7rem);
+  line-height: 1.1;
+}
+
+.lp .versus thead td {
+  border-bottom: 2px solid #fff;
+}
+
+.lp .versus thead th span {
+  display: block;
+  margin-top: 0.3rem;
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-variation-settings: normal;
+  font-size: 0.95rem;
+  color: rgb(255 255 255 / 0.72);
+}
+
+.lp .versus thead th.versus-ours {
+  color: var(--color-tape);
+}
+
+.lp .versus tbody tr {
+  border-bottom: 1.5px dashed rgb(255 255 255 / 0.32);
+}
+
+.lp .versus tbody th {
+  width: 32%;
+  padding: 1.4rem 2rem 1.4rem 0;
+  vertical-align: top;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-variation-settings: 'wdth' 92;
+  font-size: clamp(1.15rem, 1.8vw, 1.4rem);
+  line-height: 1.2;
+  text-wrap: balance;
+}
+
+.lp .versus tbody td {
+  width: 34%;
+  padding: 1.4rem 1.75rem 1.4rem 0;
+  vertical-align: top;
+  color: rgb(255 255 255 / 0.72);
+}
+
+.lp .versus tbody td.versus-ours {
+  color: #fff;
+  font-weight: 500;
+}
+
+@media (max-width: 48rem) {
+  .lp .versus thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .lp .versus tbody tr {
+    display: block;
+    padding: 1.4rem 0;
+  }
+
+  .lp .versus tbody tr:first-child {
+    border-top: 2px solid #fff;
+  }
+
+  .lp .versus tbody th,
+  .lp .versus tbody td {
+    display: block;
+    width: auto;
+    padding: 0;
+  }
+
+  .lp .versus tbody td {
+    margin-top: 0.9rem;
+  }
+
+  .lp .versus tbody td::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 0.1rem;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: rgb(255 255 255 / 0.72);
+  }
+
+  .lp .versus tbody td.versus-ours::before {
+    color: var(--color-tape);
+  }
 }
 
 /* ---------- How a fitting works ---------- */
@@ -734,48 +1009,40 @@
 }
 
 .lp .steps {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: clamp(2rem, 4vw, 2.75rem);
+  gap: 2rem;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
 .lp .step {
+  position: relative;
+  z-index: 1;
   display: grid;
-  grid-template-columns: clamp(5.5rem, 22vw, 11rem) minmax(0, 1fr);
-  gap: clamp(1rem, 3.5vw, 2.75rem);
+  grid-template-columns: clamp(5rem, 20vw, 7.5rem) minmax(0, 1fr);
+  gap: clamp(1rem, 3.5vw, 2rem);
   align-items: center;
-  max-width: 43rem;
+  max-width: 40rem;
 }
 
 .lp .step-text .h3 {
   margin: 0 0 0.45rem;
+  font-size: 1.35rem;
 }
 
 .lp .step-text p {
   margin: 0;
-  padding: 0.1rem 0;
   background: #fff;
-}
-
-/* Laid out the way pieces are arranged on cloth: staggered, none quite square. */
-@media (min-width: 60rem) {
-  .lp .step:nth-child(even) {
-    margin-left: auto;
-  }
-
-  .lp .step:nth-child(3) {
-    margin-left: 14%;
-  }
 }
 
 .lp .step:nth-child(1) .pattern-piece {
   transform: rotate(-5deg);
 }
 .lp .step:nth-child(2) .pattern-piece {
-  transform: rotate(7deg);
+  transform: rotate(6deg);
 }
 .lp .step:nth-child(3) .pattern-piece {
   transform: rotate(-3deg);
@@ -784,7 +1051,7 @@
   transform: rotate(4deg);
 }
 .lp .step:nth-child(5) .pattern-piece {
-  transform: rotate(-8deg);
+  transform: rotate(-7deg);
 }
 
 .lp .pattern-piece {
@@ -827,113 +1094,340 @@
   font-size: 54px;
 }
 
+/* On wide screens the five pieces are laid in a row and joined by one line of stitching. */
+@media (min-width: 64rem) {
+  .lp .steps {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 2.25rem;
+  }
+
+  .lp .steps::before {
+    content: '';
+    position: absolute;
+    top: 4.25rem;
+    left: 3rem;
+    right: 3rem;
+    border-top: 2px dashed rgb(36 55 230 / 0.65);
+  }
+
+  .lp .step {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.4rem;
+    align-items: start;
+    align-content: start;
+    max-width: none;
+  }
+
+  .lp .step .pattern-piece {
+    width: 8.5rem;
+  }
+}
+
+/* The harness explainer and the fan-out picture. */
+.lp .harness {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 3rem;
+  margin-top: clamp(3.5rem, 7vw, 5.5rem);
+  padding-top: clamp(2.5rem, 5vw, 3.75rem);
+  border-top: 2px dashed rgb(36 55 230 / 0.55);
+}
+
+.lp .harness-text > p {
+  max-width: 36em;
+  margin: 0.8rem 0 0;
+  background: #fff;
+}
+
+.lp .harness-parts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 2.25rem;
+  margin: 1.5rem 0 0;
+  border-top: 2px solid var(--color-ink);
+}
+
+.lp .harness-parts div {
+  padding: 0.85rem 0;
+  border-bottom: 1.5px dashed rgb(13 18 56 / 0.35);
+  background: #fff;
+}
+
+.lp .harness-parts dt {
+  font-weight: 700;
+}
+
+.lp .harness-parts dd {
+  margin: 0.1rem 0 0;
+  color: var(--color-ink-soft);
+}
+
+@media (max-width: 30rem) {
+  .lp .harness-parts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.lp .fanout {
+  margin: 0;
+}
+
+.lp .fanout-diagram {
+  display: grid;
+  grid-template-columns: minmax(5rem, 7.5rem) minmax(1.5rem, 4.5rem) minmax(0, 1fr);
+  align-items: stretch;
+}
+
+.lp .fanout-source {
+  align-self: center;
+  display: grid;
+  justify-items: center;
+  gap: 0.6rem;
+  text-align: center;
+}
+
+.lp .fanout-source svg {
+  width: 4.75rem;
+  height: auto;
+}
+
+.lp .fanout-source rect {
+  fill: #fff;
+  stroke: var(--color-chalk);
+  stroke-width: 2.5;
+}
+
+.lp .fanout-source path {
+  fill: none;
+  stroke: var(--color-chalk);
+  stroke-width: 2;
+  stroke-dasharray: 4 4;
+}
+
+.lp .fanout-source p {
+  margin: 0;
+  background: #fff;
+  font-weight: 700;
+  font-size: 0.98rem;
+  line-height: 1.25;
+}
+
+/* Sized by the row, not by its own aspect ratio. */
+.lp .fanout-wires {
+  width: 100%;
+  height: 0;
+  min-height: 100%;
+}
+
+.lp .fanout-wires path {
+  fill: none;
+  stroke: var(--color-chalk);
+  stroke-width: 2;
+  stroke-dasharray: 6 5;
+  vector-effect: non-scaling-stroke;
+}
+
+.lp .fanout-targets {
+  display: grid;
+  grid-auto-rows: 1fr;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lp .fanout-targets li {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.65rem 0;
+  line-height: 1.35;
+}
+
+.lp .fanout-targets li > span:last-child {
+  background: #fff;
+}
+
+.lp .fanout-letter {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 2.7rem;
+  height: 2.7rem;
+  border: 2.5px solid var(--color-chalk);
+  background: #fff;
+  color: var(--color-chalk);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-variation-settings: 'wdth' 120;
+  font-size: 1.3rem;
+}
+
+.lp .fanout figcaption {
+  margin-top: 1.4rem;
+  background: #fff;
+  font-size: 0.98rem;
+  color: var(--color-ink-soft);
+}
+
+/* On a phone the picture turns on its side: the cases on top, the configurations hanging below. */
+@media (max-width: 40rem) {
+  .lp .fanout-diagram {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .lp .fanout-source {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    justify-self: start;
+    text-align: left;
+  }
+
+  .lp .fanout-source svg {
+    width: 4rem;
+  }
+
+  .lp .fanout-wires {
+    display: none;
+  }
+
+  .lp .fanout-targets {
+    margin-left: 1.9rem;
+    padding-top: 0.5rem;
+    border-left: 2px dashed var(--color-chalk);
+  }
+
+  .lp .fanout-targets li::before {
+    content: '';
+    flex: none;
+    width: 1.1rem;
+    margin-right: -0.2rem;
+    border-top: 2px dashed var(--color-chalk);
+  }
+}
+
+@media (min-width: 64rem) {
+  .lp .harness {
+    grid-template-columns: minmax(0, 6fr) minmax(0, 5fr);
+    gap: 5rem;
+    align-items: center;
+  }
+}
+
 /* ---------- What gets measured ---------- */
 
-.lp .chart {
+.lp .measured {
+  --focus: var(--color-tape);
   padding-block: clamp(4.5rem, 9vw, 7.5rem);
-  background: var(--color-ink);
+  background: var(--color-chalk);
   color: #fff;
 }
 
-.lp .size-chart {
-  width: 100%;
-  border-collapse: collapse;
-  text-align: left;
+.lp .metrics {
+  border-top: 2px solid #fff;
 }
 
-.lp .size-chart thead th {
-  padding: 0 0 0.75rem;
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: rgb(255 255 255 / 0.72);
-  border-bottom: 2px solid #fff;
+.lp .metric {
+  border-bottom: 1.5px dashed rgb(255 255 255 / 0.45);
 }
 
-.lp .size-chart tbody th,
-.lp .size-chart tbody td {
-  padding: 1.15rem 0;
-  vertical-align: baseline;
-  border-bottom: 1.5px dashed rgb(255 255 255 / 0.32);
+.lp .metric summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.4rem 1.5rem;
+  align-items: start;
+  padding: 1.2rem 0;
+  list-style: none;
+  cursor: pointer;
 }
 
-.lp .size-chart tbody th {
-  width: 38%;
-  padding-right: 2rem;
+.lp .metric summary::-webkit-details-marker {
+  display: none;
+}
+
+.lp .metric-name {
+  grid-column: 1;
+  margin: 0;
   font-family: var(--font-display);
   font-weight: 700;
   font-variation-settings: 'wdth' 96;
-  font-size: clamp(1.2rem, 2.1vw, 1.6rem);
+  font-size: clamp(1.25rem, 2.1vw, 1.6rem);
   line-height: 1.15;
 }
 
-.lp .size-chart tbody td {
-  color: rgb(255 255 255 / 0.9);
+.lp .metric-definition {
+  grid-column: 1 / -1;
+  color: rgb(255 255 255 / 0.94);
 }
 
-@media (max-width: 40rem) {
-  .lp .size-chart thead {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
+.lp .metric-toggle {
+  grid-column: 2;
+  grid-row: 1;
+  width: 1.6rem;
+  height: 1.6rem;
+  transition: transform 200ms ease;
+}
+
+.lp .metric[open] .metric-toggle {
+  transform: rotate(45deg);
+}
+
+.lp .metric summary:hover .metric-name {
+  text-decoration: underline dashed 2px;
+  text-underline-offset: 0.2em;
+}
+
+.lp .metric-more {
+  max-width: 44em;
+  margin: 0 0 1.4rem;
+  padding: 0.1rem 0 0.1rem 1rem;
+  border-left: 3px solid var(--color-tape);
+}
+
+@media (min-width: 52rem) {
+  .lp .metric summary {
+    grid-template-columns: minmax(0, 4fr) minmax(0, 7fr) 1.6rem;
+    align-items: baseline;
   }
 
-  .lp .size-chart tbody tr {
-    display: block;
-    padding: 1.1rem 0;
-    border-bottom: 1.5px dashed rgb(255 255 255 / 0.32);
+  .lp .metric-definition {
+    grid-column: 2;
   }
 
-  .lp .size-chart tbody tr:first-child {
-    border-top: 2px solid #fff;
+  .lp .metric-toggle {
+    grid-column: 3;
+    align-self: center;
   }
 
-  .lp .size-chart tbody th,
-  .lp .size-chart tbody td {
-    display: block;
-    width: auto;
-    padding: 0;
-    border: 0;
-  }
-
-  .lp .size-chart tbody td {
-    margin-top: 0.35rem;
+  /* Lines the detail up under the definition column. */
+  .lp .metric-more {
+    margin-left: calc((100% - 4.6rem) * 4 / 11 + 1.5rem);
   }
 }
 
 .lp .weights {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 2rem;
+  gap: 2.5rem;
   margin-top: clamp(3rem, 7vw, 5rem);
 }
 
-@media (min-width: 60rem) {
-  .lp .weights {
-    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
-    gap: 5rem;
-    align-items: start;
-  }
-}
-
-.lp .weights-text .h3 {
-  margin: 0 0 0.6rem;
-}
-
 .lp .weights-text p {
-  margin: 0;
-  color: rgb(255 255 255 / 0.9);
+  margin: 0.8rem 0 0;
+  color: rgb(255 255 255 / 0.94);
 }
 
 .lp .weights-bar {
   display: flex;
-  height: 30px;
   gap: 3px;
+  height: 34px;
+  margin-top: 1.4rem;
 }
 
 .lp .weights-bar span {
   flex-basis: 0;
+  min-width: 4px;
+  transition: flex-grow 450ms cubic-bezier(0.3, 0.7, 0.2, 1);
 }
 
 .lp .tone-tape {
@@ -942,8 +1436,8 @@
 .lp .tone-white {
   background: #fff;
 }
-.lp .tone-pale {
-  background: var(--color-chalk-pale);
+.lp .tone-ink {
+  background: var(--color-ink);
 }
 .lp .tone-tick {
   background: var(--color-tick);
@@ -968,6 +1462,236 @@
   border: 0;
 }
 
+.lp .weights-legend strong {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (min-width: 60rem) {
+  .lp .weights {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: 5rem;
+    align-items: start;
+  }
+}
+
+/* ---------- How to read a benchmark ---------- */
+
+.lp .reading {
+  padding-block: clamp(4.5rem, 9vw, 7.5rem);
+}
+
+.lp .reading-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.25rem 2rem;
+  margin-bottom: 2.25rem;
+}
+
+/* Stamped on, so nobody mistakes the example for a measured result. */
+.lp .demo-flag {
+  margin: 0;
+  padding: 0.35rem 0.75rem;
+  border: 2.5px solid var(--bad);
+  border-radius: 3px;
+  background: #fff;
+  color: var(--bad);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-variation-settings: 'wdth' 100;
+  font-size: 1rem;
+  line-height: 1.2;
+  transform: rotate(-2deg);
+}
+
+.lp .reading-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2.75rem;
+}
+
+.lp .results {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-variant-numeric: tabular-nums;
+}
+
+.lp .results caption {
+  caption-side: top;
+  padding-bottom: 1.1rem;
+  text-align: left;
+  color: var(--color-ink-soft);
+}
+
+.lp .results thead th {
+  padding: 0 1rem 0.6rem 0;
+  border-bottom: 2px solid var(--color-ink);
+  vertical-align: bottom;
+  font-size: 0.92rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.lp .results thead td {
+  border-bottom: 2px solid var(--color-ink);
+}
+
+.lp .results tbody tr {
+  border-bottom: 1.5px dashed rgb(13 18 56 / 0.3);
+}
+
+.lp .results tbody th {
+  padding: 1.1rem 1rem 1.1rem 0;
+  vertical-align: top;
+  font-weight: 400;
+}
+
+.lp .results-name {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-variation-settings: 'wdth' 92;
+  font-size: 1.2rem;
+  line-height: 1.2;
+}
+
+.lp .results-description {
+  display: block;
+  font-size: 0.95rem;
+  color: var(--color-ink-soft);
+}
+
+.lp .results-stamp {
+  display: inline-block;
+  margin-top: 0.55rem;
+  padding: 0.15rem 0.5rem;
+  border: 2px solid var(--color-ink);
+  border-radius: 2px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.lp .results-stamp--best {
+  background: var(--color-tape);
+}
+
+.lp .results-stamp--out {
+  border-color: var(--bad);
+  background: #fff;
+  color: var(--bad);
+}
+
+.lp .results tbody td {
+  padding: 1.1rem 1rem 1.1rem 0;
+  vertical-align: top;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-variation-settings: 'wdth' 90;
+  font-size: 1.15rem;
+  white-space: nowrap;
+}
+
+.lp .results-top {
+  margin-inline: -0.3rem;
+  padding: 0.05rem 0.3rem;
+  background: var(--color-tape);
+}
+
+.lp .results tbody td.results-overall {
+  font-weight: 800;
+  font-size: 1.35rem;
+}
+
+.lp .results tr.is-best .results-overall {
+  color: var(--color-chalk);
+}
+
+.lp .results tr.is-ruled-out .results-overall {
+  font-family: var(--font-body);
+  font-variation-settings: normal;
+  font-weight: 600;
+  font-size: 0.98rem;
+  color: var(--color-ink-soft);
+}
+
+@media (max-width: 52rem) {
+  .lp .results thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .lp .results tbody tr {
+    display: block;
+    padding: 1.1rem 0;
+  }
+
+  .lp .results tbody tr:first-child {
+    border-top: 2px solid var(--color-ink);
+  }
+
+  .lp .results tbody th {
+    display: block;
+    padding: 0 0 0.6rem;
+  }
+
+  .lp .results tbody td {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+    padding: 0.2rem 0;
+  }
+
+  .lp .results tbody td::before {
+    content: attr(data-label);
+    font-family: var(--font-body);
+    font-weight: 500;
+    font-variation-settings: normal;
+    font-size: 0.98rem;
+    white-space: normal;
+    color: var(--color-ink-soft);
+  }
+
+  .lp .results-top {
+    margin-inline: 0;
+  }
+}
+
+.lp .reading-footnote {
+  max-width: 46em;
+  margin: 1.1rem 0 0;
+  font-size: 0.95rem;
+  color: var(--color-ink-soft);
+}
+
+.lp .reading-notes ol {
+  display: grid;
+  gap: 0.85rem;
+  margin: 1rem 0 0;
+  padding-left: 1.3rem;
+  list-style: decimal;
+}
+
+.lp .reading-notes li::marker {
+  font-family: var(--font-display);
+  font-weight: 800;
+  color: var(--color-chalk);
+}
+
+@media (min-width: 68rem) {
+  .lp .reading-grid {
+    grid-template-columns: minmax(0, 8fr) minmax(0, 4fr);
+    gap: 4rem;
+    align-items: start;
+  }
+}
+
 /* ---------- Verdicts ---------- */
 
 .lp .verdicts {
@@ -982,13 +1706,6 @@
   margin: 0;
   padding: 0;
   list-style: none;
-}
-
-@media (min-width: 56rem) {
-  .lp .labels {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 2rem;
-  }
 }
 
 /* A woven garment label, stitched down along its edge. */
@@ -1023,18 +1740,64 @@
   margin: 1rem 0 0;
 }
 
-/* ---------- Closing ---------- */
+/* The fourth outcome: a label with nothing sewn on yet. */
+.lp .label--open {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.6rem 2.5rem;
+  margin-top: 1.75rem;
+  padding: 1.6rem 1.75rem;
+  border: 2px dashed var(--color-ink);
+  background: transparent;
+  box-shadow: none;
+}
+
+.lp .label--open::after {
+  content: none;
+}
+
+.lp .label-open-word {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-variation-settings: 'wdth' 104;
+  font-size: clamp(1.8rem, 3.4vw, 2.6rem);
+  line-height: 1;
+}
+
+.lp .label--open p {
+  max-width: 42em;
+  margin: 0;
+}
+
+@media (min-width: 56rem) {
+  .lp .labels {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 2rem;
+  }
+
+  .lp .label--open {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    margin-top: 2rem;
+  }
+}
+
+/* ---------- Final call to action ---------- */
 
 .lp .closing {
-  padding-block: clamp(4.5rem, 10vw, 8rem) 2rem;
+  --focus: var(--color-tape);
+  position: relative;
+  padding-top: clamp(5rem, 11vw, 9rem);
   background: var(--color-chalk);
   color: #fff;
+  overflow-x: clip;
 }
 
 .lp .closing-cta {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 2rem;
+  gap: 2.5rem;
   justify-items: start;
 }
 
@@ -1050,41 +1813,19 @@
   text-wrap: balance;
 }
 
-.lp .closing-foot {
+.lp .closing-actions {
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 0.75rem 2rem;
+  align-items: center;
+  gap: 1.25rem 2.25rem;
+}
+
+.lp .closing-actions p {
+  margin: 0;
+}
+
+/* A flat length of tape closes the page off above the footer. */
+.lp .closing-tape {
   margin-top: clamp(4rem, 9vw, 7rem);
-  padding-top: 1.5rem;
-  border-top: 1.5px dashed rgb(255 255 255 / 0.5);
-}
-
-.lp .closing-foot p {
-  margin: 0;
-  font-size: 0.95rem;
-}
-
-/* ---------- Stand-in page for the lab ---------- */
-
-.lp.lab-stub {
-  min-height: 100vh;
-  background: var(--color-chalk);
-  color: #fff;
-  padding-block: 1.25rem 4rem;
-}
-
-.lp.lab-stub .wrap {
-  display: grid;
-  gap: 1.75rem;
-  justify-items: start;
-}
-
-.lp.lab-stub .h2 {
-  margin: clamp(3rem, 12vh, 7rem) 0 0;
-}
-
-.lp.lab-stub .lede {
-  margin: 0;
+  overflow: hidden;
 }
