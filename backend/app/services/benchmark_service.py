@@ -3,12 +3,13 @@ from datetime import datetime, timezone
 from decimal import Decimal
 import time
 from typing import Any, Dict, List, Optional
-from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy import select, update
+from sqlalchemy.orm import Session, sessionmaker
 
 from app.core.database import SessionLocal
 from app.core.exceptions import EntityNotFoundException, ValidationException
 from app.models.benchmark import Benchmark
+from app.models.evaluation import Evaluation
 from app.models.project import Project
 from app.models.test_case import TestCase
 from app.providers import PROVIDER_CLASSES, get_provider
@@ -23,6 +24,7 @@ from app.services.cost_service import CostService
 from app.services.evaluation_service import EvaluationService
 from app.services.judge_service import JudgeService
 from app.services.test_case_service import TestCaseService
+from app.utils.helpers import generate_uuid, utc_now
 from app.utils.logger import logger
 
 VALID_STATUSES = {"pending", "running", "completed", "failed"}
@@ -30,6 +32,9 @@ VALID_STATUSES = {"pending", "running", "completed", "failed"}
 
 class BenchmarkService:
     """Service layer managing benchmark lifecycle, configuration, and execution orchestration."""
+
+    # In-memory execution registry tracking active benchmark executions per worker process
+    _ACTIVE_EXECUTIONS: Dict[str, Dict[str, Any]] = {}
 
     @staticmethod
     def get_benchmarks(
@@ -367,8 +372,17 @@ class BenchmarkService:
 
             # Transition status to running
             benchmark.status = "running"
+            benchmark.updated_at = utc_now()
             local_db.add(benchmark)
             local_db.commit()
+
+            # Register execution in worker process registry
+            exec_id = generate_uuid()
+            cls._ACTIVE_EXECUTIONS[benchmark_id] = {
+                "execution_id": exec_id,
+                "started_at": utc_now(),
+                "last_heartbeat": utc_now(),
+            }
 
             # Cache required project data to avoid open transactions
             project_sys_prompt = project.system_prompt
@@ -377,138 +391,216 @@ class BenchmarkService:
             selected_models = list(benchmark.selected_models)
             repeats = benchmark.repeats
 
-        # 2. Build execution matrix
-        semaphore = asyncio.Semaphore(max_concurrency)
-        tasks = []
+        try:
+            # 2. Build execution matrix
+            semaphore = asyncio.Semaphore(max_concurrency)
+            tasks = []
 
-        for model_name in selected_models:
-            provider_name = model_provider_map[model_name]
-            for test_case in test_cases:
-                for repeat_idx in range(repeats):
-                    tasks.append(
-                        cls._execute_single_evaluation(
-                            benchmark_id=benchmark_id,
-                            test_case=test_case,
-                            project_system_prompt=project_sys_prompt,
-                            project_rubric=project_rubric,
-                            project_output_schema=project_output_schema,
-                            model_name=model_name,
-                            provider_name=provider_name,
-                            repeat_index=repeat_idx,
-                            mock=mock,
-                            judge_enabled=judge_enabled,
-                            judge_provider=judge_provider,
-                            judge_model=judge_model,
-                            semaphore=semaphore,
-                            session_factory=session_factory,
+            for model_name in selected_models:
+                provider_name = model_provider_map[model_name]
+                for test_case in test_cases:
+                    for repeat_idx in range(repeats):
+                        tasks.append(
+                            cls._execute_single_evaluation(
+                                benchmark_id=benchmark_id,
+                                test_case=test_case,
+                                project_system_prompt=project_sys_prompt,
+                                project_rubric=project_rubric,
+                                project_output_schema=project_output_schema,
+                                model_name=model_name,
+                                provider_name=provider_name,
+                                repeat_index=repeat_idx,
+                                mock=mock,
+                                judge_enabled=judge_enabled,
+                                judge_provider=judge_provider,
+                                judge_model=judge_model,
+                                semaphore=semaphore,
+                                session_factory=session_factory,
+                            )
                         )
-                    )
 
-        # 3. Execute concurrently with bounded concurrency
-        results = await asyncio.gather(*tasks, return_exceptions=True)
+            # 3. Execute concurrently with bounded concurrency
+            results = await asyncio.gather(*tasks, return_exceptions=True)
 
-        # 4. Finalize benchmark status & aggregate results
-        with session_factory() as local_db:
-            benchmark = BenchmarkService.get_benchmark_or_404(local_db, benchmark_id)
-            evaluations = EvaluationService.get_evaluations_for_benchmark(local_db, benchmark_id)
+            # 4. Finalize benchmark status & aggregate results
+            with session_factory() as local_db:
+                benchmark = BenchmarkService.get_benchmark_or_404(local_db, benchmark_id)
+                evaluations = EvaluationService.get_evaluations_for_benchmark(local_db, benchmark_id)
 
-            total_evals = len(evaluations)
-            successful_evals = sum(1 for e in evaluations if e.status == "completed")
-            failed_evals = sum(1 for e in evaluations if e.status == "failed")
-            total_attempts = sum(e.attempt_count for e in evaluations)
-            total_cost = sum((float(e.execution_cost) for e in evaluations), 0.0)
+                total_evals = len(evaluations)
+                successful_evals = sum(1 for e in evaluations if e.status == "completed")
+                failed_evals = sum(1 for e in evaluations if e.status == "failed")
+                total_attempts = sum(e.attempt_count for e in evaluations)
+                total_cost = sum((float(e.execution_cost) for e in evaluations), 0.0)
 
-            latencies = [e.latency_ms for e in evaluations if e.latency_ms is not None]
-            avg_latency = round(sum(latencies) / len(latencies), 2) if latencies else 0.0
+                latencies = [e.latency_ms for e in evaluations if e.latency_ms is not None]
+                avg_latency = round(sum(latencies) / len(latencies), 2) if latencies else 0.0
 
-            quality_scores = [e.quality_score for e in evaluations if e.quality_score is not None]
-            avg_quality = (
-                round(sum(quality_scores) / len(quality_scores), 2) if quality_scores else None
-            )
+                quality_scores = [e.quality_score for e in evaluations if e.quality_score is not None]
+                avg_quality = (
+                    round(sum(quality_scores) / len(quality_scores), 2) if quality_scores else None
+                )
 
-            # Determine final status: Never mark completed if 0 inferences succeeded
-            if successful_evals > 0:
-                benchmark.status = "completed"
-            else:
-                benchmark.status = "failed"
+                # Determine final status: Never mark completed if 0 inferences succeeded
+                if successful_evals > 0:
+                    benchmark.status = "completed"
+                else:
+                    benchmark.status = "failed"
 
-            completed_at = datetime.now(timezone.utc)
-            benchmark.completed_at = completed_at
-            local_db.add(benchmark)
-            local_db.commit()
+                completed_at = datetime.now(timezone.utc)
+                benchmark.completed_at = completed_at
+                benchmark.updated_at = completed_at
+                local_db.add(benchmark)
+                local_db.commit()
 
-            message = (
-                f"Benchmark execution {benchmark.status}: {successful_evals}/{total_evals} "
-                f"evaluations succeeded across {len(selected_models)} models."
-            )
+                message = (
+                    f"Benchmark execution {benchmark.status}: {successful_evals}/{total_evals} "
+                    f"evaluations succeeded across {len(selected_models)} models."
+                )
 
-            return BenchmarkExecutionSummary(
-                benchmark_id=benchmark_id,
-                status=benchmark.status,
-                total_evaluations=total_evals,
-                successful_evaluations=successful_evals,
-                failed_evaluations=failed_evals,
-                total_attempts=total_attempts,
-                total_cost_usd=round(total_cost, 6),
-                average_latency_ms=avg_latency,
-                average_quality_score=avg_quality,
-                completed_at=completed_at,
-                is_mock=mock,
-                message=message,
-            )
+                return BenchmarkExecutionSummary(
+                    benchmark_id=benchmark_id,
+                    status=benchmark.status,
+                    total_evaluations=total_evals,
+                    successful_evaluations=successful_evals,
+                    failed_evaluations=failed_evals,
+                    total_attempts=total_attempts,
+                    total_cost_usd=round(total_cost, 6),
+                    average_latency_ms=avg_latency,
+                    average_quality_score=avg_quality,
+                    completed_at=completed_at,
+                    is_mock=mock,
+                    message=message,
+                )
+        finally:
+            cls._ACTIVE_EXECUTIONS.pop(benchmark_id, None)
 
     @classmethod
     def recover_benchmark(
         cls,
         db: Session,
         benchmark_id: str,
+        lease_timeout_seconds: int = 300,
+        force: bool = False,
     ) -> Benchmark:
-        """Safely recover an abandoned benchmark trapped in 'running' state after a crash or timeout.
+        """Safely recover an abandoned benchmark trapped in 'running' state after a crash or disconnection.
 
-        Inspects completed evaluation records:
-        - If >= 1 evaluations succeeded, completes the benchmark based on empirical results.
-        - If 0 evaluations succeeded or none were recorded, marks the benchmark failed.
+        Protection mechanisms:
+        - In-process active worker execution registry check.
+        - Lease timeout check (ensures at least lease_timeout_seconds elapsed since last activity).
+        - Atomic state transition via SQL UPDATE to prevent race conditions during concurrent recovery.
+        - Safe completion: completed if >= 1 evaluations succeeded, failed if 0 succeeded.
         """
+        # 1. In-process active execution protection
+        if not force and benchmark_id in cls._ACTIVE_EXECUTIONS:
+            raise ValidationException(
+                f"Benchmark '{benchmark_id}' is actively executing on this worker.",
+                details={"active": True, "worker_protected": True},
+            )
+
         benchmark = BenchmarkService.get_benchmark_or_404(db, benchmark_id)
         if benchmark.status != "running":
             return benchmark
 
+        now = utc_now()
+
+        # 2. Cross-worker lease timeout validation
+        if not force:
+            last_activity = benchmark.updated_at or benchmark.created_at
+            if last_activity.tzinfo is None:
+                last_activity = last_activity.replace(tzinfo=timezone.utc)
+
+            # Check if any evaluation was recorded more recently
+            latest_eval = db.scalars(
+                select(Evaluation)
+                .where(Evaluation.benchmark_id == benchmark_id)
+                .order_by(Evaluation.created_at.desc())
+            ).first()
+            if latest_eval and latest_eval.created_at:
+                eval_time = latest_eval.created_at
+                if eval_time.tzinfo is None:
+                    eval_time = eval_time.replace(tzinfo=timezone.utc)
+                if eval_time > last_activity:
+                    last_activity = eval_time
+
+            elapsed = (now - last_activity).total_seconds()
+            if elapsed < lease_timeout_seconds:
+                logger.info(
+                    f"Benchmark '{benchmark_id}' was active {elapsed:.1f}s ago "
+                    f"(< {lease_timeout_seconds}s lease window). Protected against premature recovery."
+                )
+                raise ValidationException(
+                    f"Benchmark '{benchmark_id}' was active {elapsed:.1f}s ago (within {lease_timeout_seconds}s lease). "
+                    f"Protected against premature recovery. Use force=true to override.",
+                    details={"elapsed_seconds": round(elapsed, 1), "lease_timeout_seconds": lease_timeout_seconds},
+                )
+
         evaluations = EvaluationService.get_evaluations_for_benchmark(db, benchmark_id)
         successful_evals = sum(1 for e in evaluations if e.status == "completed")
 
-        completed_at = datetime.now(timezone.utc)
-        benchmark.completed_at = completed_at
-
         if successful_evals > 0:
-            benchmark.status = "completed"
+            new_status = "completed"
             recovery_note = f"[Recovered: {successful_evals}/{len(evaluations)} evaluations completed]"
         else:
-            benchmark.status = "failed"
+            new_status = "failed"
             recovery_note = "[Recovered: Run interrupted before any evaluations completed]"
 
-        if benchmark.description:
-            benchmark.description = f"{benchmark.description}\n{recovery_note}"
-        else:
-            benchmark.description = recovery_note
+        new_description = (
+            f"{benchmark.description}\n{recovery_note}"
+            if benchmark.description
+            else recovery_note
+        )
 
-        db.add(benchmark)
+        # 3. Atomic state transition: WHERE status = 'running' guarantees mutual exclusion
+        stmt = (
+            update(Benchmark)
+            .where(Benchmark.id == benchmark_id)
+            .where(Benchmark.status == "running")
+            .values(
+                status=new_status,
+                completed_at=now,
+                description=new_description,
+                updated_at=now,
+            )
+        )
+        res = db.execute(stmt)
         db.commit()
         db.refresh(benchmark)
-        logger.info(f"Recovered abandoned benchmark {benchmark.id}: status transitioned to '{benchmark.status}'.")
+
+        if res.rowcount == 0:
+            logger.warning(
+                f"Concurrent recovery attempt for benchmark '{benchmark_id}': status already transitioned."
+            )
+        else:
+            logger.info(
+                f"Recovered abandoned benchmark {benchmark.id}: status transitioned to '{new_status}'."
+            )
+
         return benchmark
 
     @classmethod
     def recover_abandoned_benchmarks(
         cls,
         db: Session,
+        lease_timeout_seconds: int = 300,
     ) -> List[Benchmark]:
-        """Find and reconcile all abandoned benchmarks left in 'running' status across server restarts."""
+        """Find and safely reconcile all abandoned benchmarks left in 'running' status across server restarts."""
         query = select(Benchmark).where(Benchmark.status == "running")
-        abandoned = list(db.scalars(query).all())
+        candidates = list(db.scalars(query).all())
         recovered = []
-        for b in abandoned:
-            rec = cls.recover_benchmark(db, b.id)
-            recovered.append(rec)
+        for b in candidates:
+            try:
+                rec = cls.recover_benchmark(
+                    db,
+                    b.id,
+                    lease_timeout_seconds=lease_timeout_seconds,
+                    force=False,
+                )
+                if rec.status != "running":
+                    recovered.append(rec)
+            except ValidationException:
+                # Benchmark is active on another worker within lease window
+                continue
         if recovered:
-            logger.info(f"Reconciled {len(recovered)} abandoned benchmark(s) on startup.")
+            logger.info(f"Reconciled {len(recovered)} abandoned benchmark(s) exceeding {lease_timeout_seconds}s lease window.")
         return recovered

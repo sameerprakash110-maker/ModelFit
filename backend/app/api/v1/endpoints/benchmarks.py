@@ -104,10 +104,17 @@ async def run_benchmark(
 )
 def recover_benchmark(
     benchmark_id: str,
+    force: bool = Query(False, description="Force recovery even if within active lease timeout"),
+    lease_timeout_seconds: int = Query(300, description="Inactivity lease timeout in seconds"),
     db: Session = Depends(get_db),
 ) -> BenchmarkResponse:
     """Recover an abandoned benchmark stuck in running status after a crash or disconnection."""
-    return BenchmarkService.recover_benchmark(db, benchmark_id)
+    return BenchmarkService.recover_benchmark(
+        db,
+        benchmark_id,
+        lease_timeout_seconds=lease_timeout_seconds,
+        force=force,
+    )
 
 
 @router.get(

@@ -151,8 +151,13 @@ def test_recover_benchmark_via_api(client: TestClient):
     # Manually transition to running (simulating crash during run)
     client.patch(f"/api/v1/benchmarks/{benchmark_id}", json={"status": "running"})
 
-    # Trigger recovery endpoint
-    rec_res = client.post(f"/api/v1/benchmarks/{benchmark_id}/recover")
+    # Without force, fresh running benchmark is within lease window (400 Bad Request)
+    rec_res_rejected = client.post(f"/api/v1/benchmarks/{benchmark_id}/recover")
+    assert rec_res_rejected.status_code == 400
+    assert "within" in rec_res_rejected.json()["error"]["message"]
+
+    # With force=true, recovery succeeds
+    rec_res = client.post(f"/api/v1/benchmarks/{benchmark_id}/recover?force=true")
     assert rec_res.status_code == 200
     assert rec_res.json()["status"] == "failed"
     assert rec_res.json()["completed_at"] is not None
