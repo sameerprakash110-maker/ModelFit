@@ -376,6 +376,32 @@ class TestContractCompliance:
         assert b.repeats == 3
         assert b.completed_at is None
 
+    def test_mock_flags_default_to_false_and_persist(self, db_session):
+        """Benchmark and evaluation mock flags must support SQL-level filtering."""
+        project = _make_project(db_session)
+        benchmark = _make_benchmark(db_session, project.id)
+        evaluation = _make_evaluation(db_session, benchmark.id)
+        db_session.commit()
+
+        db_session.expire_all()
+        assert db_session.get(Benchmark, benchmark.id).is_mock is False
+        assert db_session.get(Evaluation, evaluation.id).is_mock is False
+
+        benchmark.is_mock = True
+        evaluation.is_mock = True
+        db_session.commit()
+        db_session.expire_all()
+
+        assert db_session.get(Benchmark, benchmark.id).is_mock is True
+        assert db_session.get(Evaluation, evaluation.id).is_mock is True
+
+    def test_mock_flags_are_not_null_and_indexed(self):
+        """Mock flags are required and indexed for efficient filtering."""
+        for model in (Benchmark, Evaluation):
+            column = model.__table__.c["is_mock"]
+            assert column.nullable is False
+            assert column.index is True
+
     def test_test_case_evaluation_criteria_json(self, db_session):
         """TestCase.evaluation_criteria must accept and round-trip a JSON dict."""
         project = _make_project(db_session)

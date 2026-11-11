@@ -1,6 +1,6 @@
 from decimal import Decimal
 from typing import TYPE_CHECKING, List, Optional
-from sqlalchemy import Float, ForeignKey, Integer, Numeric, String, Text
+from sqlalchemy import Boolean, Float, ForeignKey, Integer, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
 from app.models.base import TimestampMixin, UUIDPrimaryKeyMixin
@@ -43,6 +43,8 @@ class Evaluation(Base, UUIDPrimaryKeyMixin, TimestampMixin):
 
     response_text: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(String(50), default="completed", nullable=False)
+    # Enables SQL-level exclusion of simulated data from live analytics.
+    is_mock: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, index=True)
 
     # --- Additive tracking columns (NOT NULL with meaningful defaults) ---
     attempt_count: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
