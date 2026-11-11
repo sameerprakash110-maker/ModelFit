@@ -45,7 +45,8 @@ def test_resolve_provider_for_model():
     assert BenchmarkService.resolve_provider_for_model("gemini-3.1-flash-lite") == "gemini"
     assert BenchmarkService.resolve_provider_for_model("gemini-3.8-flash") == "gemini"
     assert BenchmarkService.resolve_provider_for_model("qwen/qwen3.8-27b") == "groq"
-    assert BenchmarkService.resolve_provider_for_model("llama-3.3-70b-versatile") == "groq"
+    assert BenchmarkService.resolve_provider_for_model("openai/gpt-oss-120b") == "groq"
+    assert BenchmarkService.resolve_provider_for_model("openai/gpt-oss-20b") == "groq"
 
     # Models from removed providers (OpenAI) fail resolution
     with pytest.raises(ValidationException, match="Unable to resolve provider"):
@@ -179,3 +180,81 @@ def test_recover_abandoned_benchmarks_batch(db_session):
     recovered = BenchmarkService.recover_abandoned_benchmarks(db_session)
     assert len(recovered) == 2
     assert {r.id for r in recovered} == {b1.id, b2.id}
+
+
+@pytest.mark.asyncio
+async def test_run_benchmark_unsupported_model_rejected(db_session):
+    """Verify benchmark with unsupported model is rejected early and creates no evaluations."""
+    bench = _setup_benchmark_env(db_session, model_list=["gpt-4o"])
+
+    with pytest.raises(ValidationException, match="Unable to resolve provider for model 'gpt-4o'"):
+        await BenchmarkService.run_benchmark(
+            benchmark_id=bench.id,
+            mock=True,
+            db=db_session,
+        )
+
+    # Status must not be running/completed, and zero evaluations must be created
+    db_session.refresh(bench)
+    assert bench.status == "pending"
+    evals = EvaluationService.get_evaluations_for_benchmark(db_session, bench.id)
+    assert len(evals) == 0
+
+
+@pytest.mark.asyncio
+async def test_run_benchmark_groq_openai_prefixed_model_e2e(db_session):
+    """Verify Groq models with 'openai/' in identifier resolve to groq and execute successfully."""
+    bench = _setup_benchmark_env(
+        db_session,
+        model_list=["openai/gpt-oss-120b", "gemini-3.1-flash-lite"],
+        num_test_cases=2,
+        repeats=1,
+    )
+
+    summary = await BenchmarkService.run_benchmark(
+        benchmark_id=bench.id,
+        mock=True,
+        judge_enabled=True,
+        db=db_session,
+    )
+
+    assert summary.status == "completed"
+    assert summary.total_evaluations == 4  # 2 models x 2 test cases
+    assert summary.successful_evaluations == 4
+
+    evals = EvaluationService.get_evaluations_for_benchmark(db_session, bench.id)
+    assert len(evals) == 4
+    groq_evals = [e for e in evals if e.model_name == "openai/gpt-oss-120b"]
+    assert len(groq_evals) == 2
+    assert all(e.provider_name == "groq" for e in groq_evals)
+
+
+@pytest.mark.asyncio
+async def test_run_benchmark_unconfigured_provider_records_failed_evaluation(db_session):
+    """Verify supported provider with missing API key records failed evaluation instead of being dropped."""
+    bench = _setup_benchmark_env(
+        db_session,
+        model_list=["gemini-3.1-flash-lite"],
+        num_test_cases=1,
+        repeats=1,
+    )
+
+    summary = await BenchmarkService.run_benchmark(
+        benchmark_id=bench.id,
+        mock=False,  # Live mode with unconfigured keys
+        judge_enabled=False,
+        db=db_session,
+    )
+
+    assert summary.status == "failed"
+    assert summary.total_evaluations == 1
+    assert summary.failed_evaluations == 1
+
+    evals = EvaluationService.get_evaluations_for_benchmark(db_session, bench.id)
+    assert len(evals) == 1
+    eval_record = evals[0]
+    assert eval_record.status == "failed"
+    assert len(eval_record.attempts) == 1
+    attempt = eval_record.attempts[0]
+    assert attempt.error_type == "unconfigured_provider"
+    assert "not configured" in (attempt.error_message or "").lower()
