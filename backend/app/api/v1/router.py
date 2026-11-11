@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 from app.api.v1.endpoints import (
+    auth,
     benchmarks,
     evaluations,
     health,
@@ -11,6 +12,7 @@ from app.api.v1.endpoints import (
 
 v1_router = APIRouter()
 
+v1_router.include_router(auth.router, prefix="/auth", tags=["Authentication"])
 v1_router.include_router(health.router, prefix="/health", tags=["Health"])
 v1_router.include_router(projects.router, prefix="/projects", tags=["Projects"])
 v1_router.include_router(providers.router, prefix="/providers", tags=["Providers"])
