@@ -142,15 +142,24 @@ class GeminiProvider(BaseLLMProvider):
         )
 
         usage = data.get("usageMetadata", {})
+        prompt_tokens = int(usage.get("promptTokenCount", 0) or 0)
+        completion_tokens = int(usage.get("candidatesTokenCount", 0) or 0)
+        from app.services.cost_service import CostService
+
+        calculated_cost = CostService.calculate_cost(
+            target_model,
+            prompt_tokens,
+            completion_tokens,
+        )
 
         return ProviderResult(
             content=response_text,
             model=target_model,
             provider=self.provider_name,
             latency_ms=latency,
-            prompt_tokens=usage.get("promptTokenCount", 0),
-            completion_tokens=usage.get("candidatesTokenCount", 0),
-            cost_usd=0.0,
+            prompt_tokens=prompt_tokens,
+            completion_tokens=completion_tokens,
+            cost_usd=calculated_cost if calculated_cost is not None else 0.0,
             is_mock=False,
             raw_metadata={
                 "usage_metadata": usage,

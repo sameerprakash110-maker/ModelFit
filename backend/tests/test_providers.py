@@ -1,4 +1,5 @@
 from fastapi.testclient import TestClient
+import pytest
 
 
 def test_list_providers(client: TestClient):
@@ -49,6 +50,20 @@ def test_get_unknown_provider_returns_404(client: TestClient):
 
     assert response.status_code == 404
     assert response.json()["error"]["code"] == "ENTITY_NOT_FOUND"
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/api/v1/providers",
+        "/api/v1/providers/gemini",
+        "/api/v1/providers/gemini/health",
+    ],
+)
+def test_provider_endpoints_require_authentication(unauthenticated_client, path):
+    response = unauthenticated_client.get(path)
+
+    assert response.status_code == 401
 
 
 def test_openai_provider_is_removed(client: TestClient):

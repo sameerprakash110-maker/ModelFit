@@ -56,6 +56,3 @@ class BaseLLMProvider(ABC):
         **kwargs: Any,
     ) -> ProviderResult:
         pass
-
-    async def check_health(self) -> bool:
-        return self.is_configured()
