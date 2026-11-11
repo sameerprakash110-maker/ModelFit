@@ -2,7 +2,9 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
+from app.core.auth import get_current_active_user
 from app.core.database import get_db
+from app.schemas.auth import UserResponse
 from app.schemas.benchmark import (
     BenchmarkCreate,
     BenchmarkExecutionSummary,
@@ -14,6 +16,7 @@ from app.schemas.reports import BenchmarkSummaryResponse
 from app.services.aggregation_service import AggregationService
 from app.services.benchmark_service import BenchmarkService
 from app.services.evaluation_service import EvaluationService
+from app.services.ownership_service import OwnershipService
 
 router = APIRouter()
 
@@ -26,9 +29,11 @@ router = APIRouter()
 )
 def create_benchmark(
     benchmark_in: BenchmarkCreate,
+    current_user: UserResponse = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ) -> BenchmarkResponse:
-    """Create and persist a new benchmark run configuration."""
+    """Create and persist a new benchmark run configuration, verifying parent project ownership."""
+    OwnershipService.verify_project_access(db, benchmark_in.project_id, current_user.id)
     return BenchmarkService.create_benchmark(db, benchmark_in)
 
 
@@ -41,10 +46,16 @@ def list_benchmarks(
     project_id: Optional[str] = Query(None, description="Filter benchmarks by project UUID"),
     skip: int = Query(0, ge=0, description="Pagination skip offset"),
     limit: int = Query(100, ge=1, le=500, description="Max benchmarks to return"),
+    current_user: UserResponse = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ) -> List[BenchmarkResponse]:
-    """Retrieve benchmarks, optionally filtered by project."""
-    return BenchmarkService.get_benchmarks(db, project_id=project_id, skip=skip, limit=limit)
+    """Retrieve benchmarks belonging to user-owned projects."""
+    if project_id:
+        OwnershipService.verify_project_access(db, project_id, current_user.id)
+        return BenchmarkService.get_benchmarks(db, project_id=project_id, skip=skip, limit=limit)
+
+    benchmarks = BenchmarkService.get_benchmarks(db, project_id=None, skip=skip, limit=limit)
+    return OwnershipService.filter_benchmarks_for_user(db, benchmarks, current_user.id)
 
 
 @router.get(
@@ -54,10 +65,11 @@ def list_benchmarks(
 )
 def get_benchmark(
     benchmark_id: str,
+    current_user: UserResponse = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ) -> BenchmarkResponse:
-    """Retrieve details and execution status for a specific benchmark."""
-    return BenchmarkService.get_benchmark_or_404(db, benchmark_id)
+    """Retrieve details and execution status for a specific benchmark, verifying ownership."""
+    return OwnershipService.verify_benchmark_access(db, benchmark_id, current_user.id)
 
 
 @router.patch(
@@ -68,9 +80,11 @@ def get_benchmark(
 def update_benchmark(
     benchmark_id: str,
     benchmark_in: BenchmarkUpdate,
+    current_user: UserResponse = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ) -> BenchmarkResponse:
-    """Update status (e.g. pending, running, completed, failed) or metadata of a benchmark."""
+    """Update status or metadata of a benchmark, verifying ownership."""
+    OwnershipService.verify_benchmark_access(db, benchmark_id, current_user.id)
     return BenchmarkService.update_benchmark(db, benchmark_id, benchmark_in)
 
 
@@ -82,9 +96,11 @@ def update_benchmark(
 async def run_benchmark(
     benchmark_id: str,
     run_req: Optional[BenchmarkRunRequest] = None,
+    current_user: UserResponse = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ) -> BenchmarkExecutionSummary:
-    """Execute the benchmark matrix across selected models and project test cases."""
+    """Execute the benchmark matrix across selected models and test cases, verifying ownership."""
+    OwnershipService.verify_benchmark_access(db, benchmark_id, current_user.id)
     req = run_req or BenchmarkRunRequest()
     return await BenchmarkService.run_benchmark(
         benchmark_id=benchmark_id,
@@ -106,9 +122,11 @@ def recover_benchmark(
     benchmark_id: str,
     force: bool = Query(False, description="Force recovery even if within active lease timeout"),
     lease_timeout_seconds: int = Query(300, description="Inactivity lease timeout in seconds"),
+    current_user: UserResponse = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ) -> BenchmarkResponse:
-    """Recover an abandoned benchmark stuck in running status after a crash or disconnection."""
+    """Recover an abandoned benchmark stuck in running status, verifying ownership."""
+    OwnershipService.verify_benchmark_access(db, benchmark_id, current_user.id)
     return BenchmarkService.recover_benchmark(
         db,
         benchmark_id,
@@ -124,10 +142,11 @@ def recover_benchmark(
 )
 def get_benchmark_summary(
     benchmark_id: str,
+    current_user: UserResponse = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ) -> BenchmarkSummaryResponse:
-    """Retrieve high-level summary and evaluation aggregates for a benchmark run."""
-    benchmark = BenchmarkService.get_benchmark_or_404(db, benchmark_id)
+    """Retrieve high-level summary and evaluation aggregates, verifying benchmark ownership."""
+    benchmark = OwnershipService.verify_benchmark_access(db, benchmark_id, current_user.id)
     aggregates = AggregationService.get_aggregated_benchmark_results(db, benchmark_id)
     evaluations = EvaluationService.get_evaluations_for_benchmark(db, benchmark_id)
     is_mock = any(

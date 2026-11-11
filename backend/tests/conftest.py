@@ -45,9 +45,16 @@ TestingSessionLocal = sessionmaker(
 @pytest.fixture(autouse=True)
 def setup_test_database():
     """Create all tables before each test and drop them after."""
+    from app.services.auth_service import AuthService
+    from app.services.ownership_service import OwnershipService
+
     Base.metadata.create_all(bind=test_engine)
+    AuthService.reset_store()
+    OwnershipService.reset_store()
     yield
     Base.metadata.drop_all(bind=test_engine)
+    AuthService.reset_store()
+    OwnershipService.reset_store()
 
 
 @pytest.fixture
@@ -61,8 +68,46 @@ def db_session() -> Generator[Session, None, None]:
 
 
 @pytest.fixture
-def client(db_session: Session) -> Generator[TestClient, None, None]:
-    """TestClient fixture with get_db dependency overridden to the in-memory test database."""
+def test_user():
+    from app.services.auth_service import AuthService
+    from app.schemas.auth import UserCreate
+
+    return AuthService.create_user(
+        UserCreate(
+            email="test_engineer@modelfit.com",
+            password="SecurePassword123!",
+            full_name="ModelFit Test User",
+        )
+    )
+
+
+@pytest.fixture
+def auth_token(test_user) -> str:
+    from app.core.security import create_access_token
+
+    return create_access_token(subject=test_user.id)
+
+
+@pytest.fixture
+def client(db_session: Session, auth_token: str) -> Generator[TestClient, None, None]:
+    """TestClient fixture with get_db dependency overridden and default authenticated session."""
+
+    def override_get_db():
+        try:
+            yield db_session
+        finally:
+            pass
+
+    app.dependency_overrides[get_db] = override_get_db
+    with TestClient(app) as test_client:
+        test_client.headers["Authorization"] = f"Bearer {auth_token}"
+        yield test_client
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def unauthenticated_client(db_session: Session) -> Generator[TestClient, None, None]:
+    """TestClient fixture without default authentication headers for security testing."""
 
     def override_get_db():
         try:

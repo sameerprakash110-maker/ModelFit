@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session, sessionmaker
 
+from app.core.config import get_settings
 from app.core.database import SessionLocal
 from app.core.exceptions import EntityNotFoundException, ValidationException
 from app.models.benchmark import Benchmark
@@ -365,6 +366,26 @@ class BenchmarkService:
                     f"Project '{project.id}' has no test cases to benchmark."
                 )
 
+            # Enforce operational limits
+            settings = get_settings()
+            if len(benchmark.selected_models) > settings.BENCHMARK_MAX_MODELS:
+                raise ValidationException(
+                    f"Selected models count ({len(benchmark.selected_models)}) exceeds limit of {settings.BENCHMARK_MAX_MODELS}."
+                )
+            if benchmark.repeats > settings.BENCHMARK_MAX_REPEATS or benchmark.repeats < 1:
+                raise ValidationException(
+                    f"Benchmark repeats ({benchmark.repeats}) must be between 1 and {settings.BENCHMARK_MAX_REPEATS}."
+                )
+            if len(test_cases) > settings.BENCHMARK_MAX_TEST_CASES:
+                raise ValidationException(
+                    f"Project test cases count ({len(test_cases)}) exceeds limit of {settings.BENCHMARK_MAX_TEST_CASES}."
+                )
+            total_workload = len(benchmark.selected_models) * len(test_cases) * benchmark.repeats
+            if total_workload > settings.BENCHMARK_MAX_TOTAL_INVOCATIONS:
+                raise ValidationException(
+                    f"Total workload ({total_workload} invocations) exceeds operational limit of {settings.BENCHMARK_MAX_TOTAL_INVOCATIONS}."
+                )
+
             # Verify all selected models resolve to a provider
             model_provider_map = {}
             for m in benchmark.selected_models:
@@ -392,8 +413,9 @@ class BenchmarkService:
             repeats = benchmark.repeats
 
         try:
-            # 2. Build execution matrix
-            semaphore = asyncio.Semaphore(max_concurrency)
+            # 2. Build execution matrix with bounded concurrency
+            bounded_concurrency = max(1, min(max_concurrency, settings.BENCHMARK_MAX_CONCURRENCY))
+            semaphore = asyncio.Semaphore(bounded_concurrency)
             tasks = []
 
             for model_name in selected_models:
