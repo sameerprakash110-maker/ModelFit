@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Any, Dict, Optional
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class TestCaseBase(BaseModel):
@@ -26,6 +26,13 @@ class TestCaseUpdate(BaseModel):
     input_prompt: Optional[str] = Field(None, min_length=1)
     expected_behavior: Optional[str] = None
     evaluation_criteria: Optional[Dict[str, Any]] = None
+
+    @field_validator("expected_behavior")
+    @classmethod
+    def expected_behavior_cannot_be_null(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            raise ValueError("expected_behavior cannot be null")
+        return value
 
 
 class TestCaseResponse(TestCaseBase):

@@ -16,4 +16,5 @@ __all__ = [
     "TestCase",
     "Evaluation",
     "EvaluationAttempt",
+    "User",
 ]

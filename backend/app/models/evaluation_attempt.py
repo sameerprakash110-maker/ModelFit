@@ -27,9 +27,7 @@ class EvaluationAttempt(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     execution_cost: Mapped[Decimal] = mapped_column(
         Numeric(12, 8), nullable=False, default=Decimal("0")
     )
-    # Enables SQL-level exclusion of simulated attempt records from live analytics
     is_mock: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, index=True)
-
     # none | json_parse | schema | assertion | api_error | timeout
     error_type: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
     error_message: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
