@@ -124,12 +124,24 @@ async def test_judge_mock_evaluation_mode():
 @pytest.mark.asyncio
 async def test_judge_unconfigured_provider_fails_gracefully():
     """Verify unconfigured provider returns failure status rather than inventing a score."""
-    res = await JudgeService.evaluate(
+    # Test registered provider without API key
+    res_unconfigured = await JudgeService.evaluate(
         candidate_response="Output text",
         expected_behavior="Target text",
-        judge_provider_name="openai",  # Unconfigured in test environment
+        judge_provider_name="gemini",  # Registered but unconfigured without key
         mock=False,
     )
-    assert res["status"] == "failed"
-    assert res["score"] is None
-    assert res["error_type"] in ("unconfigured_provider", "provider_error")
+    assert res_unconfigured["status"] == "failed"
+    assert res_unconfigured["score"] is None
+    assert res_unconfigured["error_type"] in ("unconfigured_provider", "provider_error")
+
+    # Test unregistered/removed provider
+    res_unavailable = await JudgeService.evaluate(
+        candidate_response="Output text",
+        expected_behavior="Target text",
+        judge_provider_name="openai",  # Removed in PR #6
+        mock=False,
+    )
+    assert res_unavailable["status"] == "failed"
+    assert res_unavailable["score"] is None
+    assert res_unavailable["error_type"] == "provider_unavailable"

@@ -32,6 +32,7 @@ KNOWN_MODEL_PROVIDERS: Dict[str, str] = {
     "gemini-3.1-flash-lite": "gemini",
     "gemini-3.8-flash": "gemini",
     "gemini-3.5-flash": "gemini",
+    "gemini-2.5-flash": "gemini",
     "gemini-2.0-flash-exp": "gemini",
     "gemini-1.5-pro": "gemini",
     "gemini-1.5-flash": "gemini",
@@ -40,7 +41,10 @@ KNOWN_MODEL_PROVIDERS: Dict[str, str] = {
     "gpt-4o-mini": "openai",
     "o1-preview": "openai",
     "o1-mini": "openai",
-    # Groq
+    # Groq (PR #5)
+    "qwen/qwen3.8-27b": "groq",
+    "openai/gpt-oss-120b": "groq",
+    "openai/gpt-oss-20b": "groq",
     "llama-3.3-70b-versatile": "groq",
     "llama-3.1-8b-instant": "groq",
     "mixtral-8x7b-32768": "groq",
@@ -144,9 +148,11 @@ class BenchmarkService:
             except Exception:
                 continue
 
-        # 2. Check explicit known model table
+        # 2. Check explicit known model table (only if provider is registered in PROVIDER_CLASSES)
         if normalized in KNOWN_MODEL_PROVIDERS:
-            return KNOWN_MODEL_PROVIDERS[normalized]
+            provider_key = KNOWN_MODEL_PROVIDERS[normalized]
+            if provider_key in PROVIDER_CLASSES:
+                return provider_key
 
         raise ValidationException(
             f"Unable to resolve provider for model '{model_name}'. "
@@ -174,68 +180,88 @@ class BenchmarkService:
     ) -> bool:
         """Execute a single model x test-case x repeat evaluation with retries and persistence."""
         async with semaphore:
-            provider = get_provider(provider_name)
             attempts: List[EvaluationAttemptCreate] = []
-
             candidate_response_text: Optional[str] = None
             candidate_success = False
 
-            # Retries loop
-            for attempt_num in range(1, max_retries + 1):
-                start_time = time.perf_counter()
-                try:
-                    result = await provider.generate(
-                        prompt=test_case.input_prompt,
-                        model=model_name,
-                        system_prompt=project_system_prompt,
-                        mock=mock,
+            try:
+                provider = get_provider(provider_name)
+            except Exception as exc:
+                err_msg = f"Provider '{provider_name}' is not registered or unavailable: {exc}"
+                logger.error(f"Cannot resolve provider instance for '{provider_name}': {exc}")
+                attempts.append(
+                    EvaluationAttemptCreate(
+                        attempt_number=1,
+                        input_tokens=0,
+                        output_tokens=0,
+                        latency_ms=0.0,
+                        execution_cost=Decimal("0"),
+                        is_mock=mock,
+                        error_type="provider_unavailable",
+                        error_message=err_msg,
                     )
-                    latency = (time.perf_counter() - start_time) * 1000
+                )
+                provider = None
 
-                    # Calculate USD cost from token counts
-                    cost = CostService.calculate_cost(
-                        model_name=model_name,
-                        prompt_tokens=result.prompt_tokens,
-                        completion_tokens=result.completion_tokens,
-                    )
-
-                    attempts.append(
-                        EvaluationAttemptCreate(
-                            attempt_number=attempt_num,
-                            input_tokens=result.prompt_tokens,
-                            output_tokens=result.completion_tokens,
-                            latency_ms=round(latency, 2),
-                            execution_cost=Decimal(str(cost)),
-                            error_type=None,
-                            error_message=None,
+            if provider is not None:
+                # Retries loop
+                for attempt_num in range(1, max_retries + 1):
+                    start_time = time.perf_counter()
+                    try:
+                        result = await provider.generate(
+                            prompt=test_case.input_prompt,
+                            model=model_name,
+                            system_prompt=project_system_prompt,
+                            mock=mock,
                         )
-                    )
-                    candidate_response_text = result.content
-                    candidate_success = True
-                    break
+                        latency = (time.perf_counter() - start_time) * 1000
 
-                except Exception as exc:
-                    latency = (time.perf_counter() - start_time) * 1000
-                    err_msg = str(exc)
-                    if "key" in err_msg.lower():
-                        err_msg = "Provider API credential or network failure."
-
-                    attempts.append(
-                        EvaluationAttemptCreate(
-                            attempt_number=attempt_num,
-                            input_tokens=0,
-                            output_tokens=0,
-                            latency_ms=round(latency, 2),
-                            execution_cost=Decimal("0"),
-                            error_type="api_error",
-                            error_message=err_msg,
+                        # Calculate USD cost from token counts
+                        cost = CostService.calculate_cost(
+                            model_name=model_name,
+                            prompt_tokens=result.prompt_tokens,
+                            completion_tokens=result.completion_tokens,
                         )
-                    )
-                    logger.warning(
-                        f"Attempt {attempt_num}/{max_retries} failed for {model_name} on test case {test_case.id}: {err_msg}"
-                    )
-                    if attempt_num < max_retries:
-                        await asyncio.sleep(0.5 * attempt_num)
+
+                        attempts.append(
+                            EvaluationAttemptCreate(
+                                attempt_number=attempt_num,
+                                input_tokens=result.prompt_tokens,
+                                output_tokens=result.completion_tokens,
+                                latency_ms=round(latency, 2),
+                                execution_cost=Decimal(str(cost)) if cost is not None else Decimal("0"),
+                                is_mock=mock,
+                                error_type=None,
+                                error_message=None,
+                            )
+                        )
+                        candidate_response_text = result.content
+                        candidate_success = True
+                        break
+
+                    except Exception as exc:
+                        latency = (time.perf_counter() - start_time) * 1000
+                        err_msg = str(exc)
+                        if "key" in err_msg.lower():
+                            err_msg = "Provider API credential or network failure."
+
+                        attempts.append(
+                            EvaluationAttemptCreate(
+                                attempt_number=attempt_num,
+                                input_tokens=0,
+                                output_tokens=0,
+                                latency_ms=round(latency, 2),
+                                execution_cost=Decimal("0"),
+                                is_mock=mock,
+                                error_type="api_error",
+                                error_message=err_msg,
+                            )
+                        )
+                        logger.warning(
+                            f"Attempt {attempt_num}/{max_retries} failed for {model_name} on test case {test_case.id}: {err_msg}"
+                        )
+                        if attempt_num < max_retries:
+                            await asyncio.sleep(0.5 * attempt_num)
 
             # Qualitative judging
             judge_score: Optional[float] = None
@@ -284,6 +310,7 @@ class BenchmarkService:
                 repeat_index=repeat_index,
                 prompt_version="original",
                 judge_reasoning=judge_reasoning,
+                is_mock=mock,
             )
 
             # Persist under a short-lived synchronous database session
@@ -437,5 +464,62 @@ class BenchmarkService:
                 average_latency_ms=avg_latency,
                 average_quality_score=avg_quality,
                 completed_at=completed_at,
+                is_mock=mock,
                 message=message,
             )
+
+    @classmethod
+    def recover_benchmark(
+        cls,
+        db: Session,
+        benchmark_id: str,
+    ) -> Benchmark:
+        """Safely recover an abandoned benchmark trapped in 'running' state after a crash or timeout.
+
+        Inspects completed evaluation records:
+        - If >= 1 evaluations succeeded, completes the benchmark based on empirical results.
+        - If 0 evaluations succeeded or none were recorded, marks the benchmark failed.
+        """
+        benchmark = BenchmarkService.get_benchmark_or_404(db, benchmark_id)
+        if benchmark.status != "running":
+            return benchmark
+
+        evaluations = EvaluationService.get_evaluations_for_benchmark(db, benchmark_id)
+        successful_evals = sum(1 for e in evaluations if e.status == "completed")
+
+        completed_at = datetime.now(timezone.utc)
+        benchmark.completed_at = completed_at
+
+        if successful_evals > 0:
+            benchmark.status = "completed"
+            recovery_note = f"[Recovered: {successful_evals}/{len(evaluations)} evaluations completed]"
+        else:
+            benchmark.status = "failed"
+            recovery_note = "[Recovered: Run interrupted before any evaluations completed]"
+
+        if benchmark.description:
+            benchmark.description = f"{benchmark.description}\n{recovery_note}"
+        else:
+            benchmark.description = recovery_note
+
+        db.add(benchmark)
+        db.commit()
+        db.refresh(benchmark)
+        logger.info(f"Recovered abandoned benchmark {benchmark.id}: status transitioned to '{benchmark.status}'.")
+        return benchmark
+
+    @classmethod
+    def recover_abandoned_benchmarks(
+        cls,
+        db: Session,
+    ) -> List[Benchmark]:
+        """Find and reconcile all abandoned benchmarks left in 'running' status across server restarts."""
+        query = select(Benchmark).where(Benchmark.status == "running")
+        abandoned = list(db.scalars(query).all())
+        recovered = []
+        for b in abandoned:
+            rec = cls.recover_benchmark(db, b.id)
+            recovered.append(rec)
+        if recovered:
+            logger.info(f"Reconciled {len(recovered)} abandoned benchmark(s) on startup.")
+        return recovered

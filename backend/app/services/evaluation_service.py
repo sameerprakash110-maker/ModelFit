@@ -113,23 +113,27 @@ class EvaluationService:
             execution_cost = max(execution_cost, agg_cost)
             latency_ms = max(latency_ms, agg_latency)
 
-        evaluation = Evaluation(
-            benchmark_id=evaluation_in.benchmark_id,
-            test_case_id=evaluation_in.test_case_id,
-            model_name=evaluation_in.model_name,
-            provider_name=evaluation_in.provider_name,
-            input_tokens=input_tokens,
-            output_tokens=output_tokens,
-            execution_cost=execution_cost,
-            latency_ms=latency_ms,
-            quality_score=evaluation_in.quality_score,
-            response_text=evaluation_in.response_text,
-            status=evaluation_in.status,
-            attempt_count=attempt_count,
-            repeat_index=evaluation_in.repeat_index,
-            prompt_version=evaluation_in.prompt_version,
-            judge_reasoning=evaluation_in.judge_reasoning,
-        )
+        eval_kwargs = {
+            "benchmark_id": evaluation_in.benchmark_id,
+            "test_case_id": evaluation_in.test_case_id,
+            "model_name": evaluation_in.model_name,
+            "provider_name": evaluation_in.provider_name,
+            "input_tokens": input_tokens,
+            "output_tokens": output_tokens,
+            "execution_cost": execution_cost,
+            "latency_ms": latency_ms,
+            "quality_score": evaluation_in.quality_score,
+            "response_text": evaluation_in.response_text,
+            "status": evaluation_in.status,
+            "attempt_count": attempt_count,
+            "repeat_index": evaluation_in.repeat_index,
+            "prompt_version": evaluation_in.prompt_version,
+            "judge_reasoning": evaluation_in.judge_reasoning,
+        }
+        if hasattr(Evaluation, "is_mock"):
+            eval_kwargs["is_mock"] = getattr(evaluation_in, "is_mock", False)
+
+        evaluation = Evaluation(**eval_kwargs)
 
         try:
             db.add(evaluation)
@@ -137,16 +141,19 @@ class EvaluationService:
 
             if attempts:
                 for att_in in attempts:
-                    attempt_row = EvaluationAttempt(
-                        evaluation_id=evaluation.id,
-                        attempt_number=att_in.attempt_number,
-                        input_tokens=att_in.input_tokens,
-                        output_tokens=att_in.output_tokens,
-                        latency_ms=att_in.latency_ms,
-                        execution_cost=Decimal(str(att_in.execution_cost)),
-                        error_type=att_in.error_type,
-                        error_message=att_in.error_message,
-                    )
+                    att_kwargs = {
+                        "evaluation_id": evaluation.id,
+                        "attempt_number": att_in.attempt_number,
+                        "input_tokens": att_in.input_tokens,
+                        "output_tokens": att_in.output_tokens,
+                        "latency_ms": att_in.latency_ms,
+                        "execution_cost": Decimal(str(att_in.execution_cost)),
+                        "error_type": att_in.error_type,
+                        "error_message": att_in.error_message,
+                    }
+                    if hasattr(EvaluationAttempt, "is_mock"):
+                        att_kwargs["is_mock"] = getattr(att_in, "is_mock", False)
+                    attempt_row = EvaluationAttempt(**att_kwargs)
                     db.add(attempt_row)
 
             db.commit()

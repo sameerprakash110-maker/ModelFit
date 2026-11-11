@@ -34,6 +34,12 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     initialize_providers()
     logger.info("AI providers initialized successfully.")
 
+    # Reconcile abandoned running benchmarks after server restart
+    from app.core.database import SessionLocal
+    from app.services.benchmark_service import BenchmarkService
+    with SessionLocal() as db:
+        BenchmarkService.recover_abandoned_benchmarks(db)
+
     yield
 
     logger.info(f"Shutting down {settings.APP_NAME}...")

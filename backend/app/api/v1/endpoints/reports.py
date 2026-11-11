@@ -5,6 +5,7 @@ from app.core.database import get_db
 from app.schemas.reports import BenchmarkReportResponse, ROIReportResponse
 from app.services.aggregation_service import AggregationService
 from app.services.benchmark_service import BenchmarkService
+from app.services.evaluation_service import EvaluationService
 from app.services.roi_service import ROIService
 
 router = APIRouter()
@@ -19,11 +20,19 @@ def get_benchmark_report(
     benchmark_id: str,
     monthly_volume: int = Query(100_000, ge=100, description="Projected monthly request volume"),
     target_category: str = Query("best_value", description="Target ROI category (best_value, best_quality, lowest_cost, fastest)"),
+    exclude_mock: bool = Query(False, description="Exclude mock simulation evaluations from report analytics"),
     db: Session = Depends(get_db),
 ) -> BenchmarkReportResponse:
     """Retrieve detailed analytics, reliability, latency, token consumption, quality scores, and ROI insights."""
     benchmark = BenchmarkService.get_benchmark_or_404(db, benchmark_id)
-    aggregates = AggregationService.get_aggregated_benchmark_results(db, benchmark_id)
+    aggregates = AggregationService.get_aggregated_benchmark_results(
+        db, benchmark_id, exclude_mock=exclude_mock
+    )
+    evaluations = EvaluationService.get_evaluations_for_benchmark(db, benchmark_id)
+    is_mock = any(
+        getattr(e, "is_mock", False) or (e.response_text and e.response_text.startswith("[MOCK"))
+        for e in evaluations
+    )
 
     # Compute ROI recommendation based on empirical results
     roi_rec = ROIService.generate_recommendation_from_metrics(
@@ -43,6 +52,7 @@ def get_benchmark_report(
         baseline_model=benchmark.baseline_model,
         repeats=benchmark.repeats,
         completed_at=benchmark.completed_at,
+        is_mock=is_mock,
         created_at=benchmark.created_at,
         updated_at=benchmark.updated_at,
         model_metrics=aggregates["model_metrics"],
@@ -64,11 +74,19 @@ def get_roi_recommendation(
     benchmark_id: str,
     monthly_volume: int = Query(100_000, ge=100, description="Projected monthly request volume"),
     target_category: str = Query("best_value", description="Target ROI category (best_value, best_quality, lowest_cost, fastest)"),
+    exclude_mock: bool = Query(False, description="Exclude mock simulation evaluations from ROI calculation"),
     db: Session = Depends(get_db),
 ) -> ROIReportResponse:
     """Retrieve data-backed cost vs quality ROI recommendations and projected savings."""
     benchmark = BenchmarkService.get_benchmark_or_404(db, benchmark_id)
-    aggregates = AggregationService.get_aggregated_benchmark_results(db, benchmark_id)
+    aggregates = AggregationService.get_aggregated_benchmark_results(
+        db, benchmark_id, exclude_mock=exclude_mock
+    )
+    evaluations = EvaluationService.get_evaluations_for_benchmark(db, benchmark_id)
+    is_mock = any(
+        getattr(e, "is_mock", False) or (e.response_text and e.response_text.startswith("[MOCK"))
+        for e in evaluations
+    )
 
     recommendation = ROIService.generate_recommendation_from_metrics(
         model_metrics=aggregates["model_metrics"],
@@ -80,5 +98,6 @@ def get_roi_recommendation(
     return ROIReportResponse(
         benchmark_id=benchmark.id,
         monthly_volume=monthly_volume,
+        is_mock=is_mock,
         recommendation=recommendation,
     )

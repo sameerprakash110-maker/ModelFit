@@ -37,7 +37,7 @@ def test_benchmark_run_and_reporting_lifecycle(client: TestClient):
         json={
             "project_id": project_id,
             "name": "Q2 Model Comparison",
-            "selected_models": ["gemini-3.1-flash-lite", "gpt-4o"],
+            "selected_models": ["gemini-3.1-flash-lite", "qwen/qwen3.8-27b"],
             "repeats": 1,
         },
     )
@@ -65,7 +65,7 @@ def test_benchmark_run_and_reporting_lifecycle(client: TestClient):
     assert sum_data["status"] == "completed"
     assert "model_summaries" in sum_data
     assert "gemini-3.1-flash-lite" in sum_data["model_summaries"]
-    assert "gpt-4o" in sum_data["model_summaries"]
+    assert "qwen/qwen3.8-27b" in sum_data["model_summaries"]
 
     # 4. GET /api/v1/reports/benchmark/{id}
     rep_res = client.get(f"/api/v1/reports/benchmark/{benchmark_id}?monthly_volume=50000")
@@ -132,3 +132,62 @@ def test_nonexistent_benchmark_reports_404(client: TestClient):
     assert client.get(f"/api/v1/benchmarks/{fake_id}/summary").status_code == 404
     assert client.get(f"/api/v1/reports/benchmark/{fake_id}").status_code == 404
     assert client.get(f"/api/v1/reports/roi/{fake_id}").status_code == 404
+
+
+def test_recover_benchmark_via_api(client: TestClient):
+    """Verify recovering an abandoned benchmark via POST /api/v1/benchmarks/{id}/recover."""
+    project_id, test_case_id = _setup_api_project_and_test_case(client)
+
+    b_res = client.post(
+        "/api/v1/benchmarks",
+        json={
+            "project_id": project_id,
+            "name": "Stuck Benchmark",
+            "selected_models": ["gemini-3.1-flash-lite"],
+        },
+    )
+    benchmark_id = b_res.json()["id"]
+
+    # Manually transition to running (simulating crash during run)
+    client.patch(f"/api/v1/benchmarks/{benchmark_id}", json={"status": "running"})
+
+    # Trigger recovery endpoint
+    rec_res = client.post(f"/api/v1/benchmarks/{benchmark_id}/recover")
+    assert rec_res.status_code == 200
+    assert rec_res.json()["status"] == "failed"
+    assert rec_res.json()["completed_at"] is not None
+
+
+def test_reports_mock_flag_and_exclusion(client: TestClient):
+    """Verify is_mock flag is exposed in reports and exclude_mock parameter works."""
+    project_id, test_case_id = _setup_api_project_and_test_case(client)
+
+    b_res = client.post(
+        "/api/v1/benchmarks",
+        json={
+            "project_id": project_id,
+            "name": "Mock Flag Benchmark",
+            "selected_models": ["gemini-3.1-flash-lite"],
+        },
+    )
+    benchmark_id = b_res.json()["id"]
+
+    # Run in mock mode
+    run_res = client.post(f"/api/v1/benchmarks/{benchmark_id}/run", json={"mock": True})
+    assert run_res.status_code == 200
+    assert run_res.json()["is_mock"] is True
+
+    # Summary should report is_mock = True
+    sum_res = client.get(f"/api/v1/benchmarks/{benchmark_id}/summary")
+    assert sum_res.status_code == 200
+    assert sum_res.json()["is_mock"] is True
+
+    # Full report should report is_mock = True
+    rep_res = client.get(f"/api/v1/reports/benchmark/{benchmark_id}")
+    assert rep_res.status_code == 200
+    assert rep_res.json()["is_mock"] is True
+
+    # Query with exclude_mock=True
+    rep_no_mock = client.get(f"/api/v1/reports/benchmark/{benchmark_id}?exclude_mock=true")
+    assert rep_no_mock.status_code == 200
+    assert rep_no_mock.json()["overall_reliability"]["total_evaluations"] == 0

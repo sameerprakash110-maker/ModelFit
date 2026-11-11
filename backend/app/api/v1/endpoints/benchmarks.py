@@ -13,6 +13,7 @@ from app.schemas.benchmark import (
 from app.schemas.reports import BenchmarkSummaryResponse
 from app.services.aggregation_service import AggregationService
 from app.services.benchmark_service import BenchmarkService
+from app.services.evaluation_service import EvaluationService
 
 router = APIRouter()
 
@@ -96,6 +97,19 @@ async def run_benchmark(
     )
 
 
+@router.post(
+    "/{benchmark_id}/recover",
+    response_model=BenchmarkResponse,
+    summary="Recover an abandoned running benchmark",
+)
+def recover_benchmark(
+    benchmark_id: str,
+    db: Session = Depends(get_db),
+) -> BenchmarkResponse:
+    """Recover an abandoned benchmark stuck in running status after a crash or disconnection."""
+    return BenchmarkService.recover_benchmark(db, benchmark_id)
+
+
 @router.get(
     "/{benchmark_id}/summary",
     response_model=BenchmarkSummaryResponse,
@@ -108,6 +122,11 @@ def get_benchmark_summary(
     """Retrieve high-level summary and evaluation aggregates for a benchmark run."""
     benchmark = BenchmarkService.get_benchmark_or_404(db, benchmark_id)
     aggregates = AggregationService.get_aggregated_benchmark_results(db, benchmark_id)
+    evaluations = EvaluationService.get_evaluations_for_benchmark(db, benchmark_id)
+    is_mock = any(
+        getattr(e, "is_mock", False) or (e.response_text and e.response_text.startswith("[MOCK"))
+        for e in evaluations
+    )
 
     model_summaries: Dict[str, Dict[str, Any]] = {}
     for model_name, m in aggregates["model_metrics"].items():
@@ -132,6 +151,7 @@ def get_benchmark_summary(
         baseline_model=benchmark.baseline_model,
         repeats=benchmark.repeats,
         completed_at=benchmark.completed_at,
+        is_mock=is_mock,
         total_evaluations=rel.total_evaluations,
         successful_evaluations=rel.successful_evaluations,
         failed_evaluations=rel.failed_evaluations,

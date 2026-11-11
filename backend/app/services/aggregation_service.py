@@ -191,11 +191,26 @@ class AggregationService:
         db: Session,
         benchmark_id: str,
         test_case_id: Optional[str] = None,
+        exclude_mock: bool = False,
     ) -> Dict[str, Any]:
-        """Fetch and aggregate evaluations for a benchmark directly from the database."""
+        """Fetch and aggregate evaluations for a benchmark directly from the database.
+
+        If exclude_mock is True, filters out mock evaluations via SQL column if present,
+        or via response signature heuristic if schema migration is pending.
+        """
         query = select(Evaluation).where(Evaluation.benchmark_id == benchmark_id)
         if test_case_id:
             query = query.where(Evaluation.test_case_id == test_case_id)
+        if exclude_mock and hasattr(Evaluation, "is_mock"):
+            query = query.where(Evaluation.is_mock == False)
 
         evaluations = list(db.scalars(query).all())
+
+        if exclude_mock and not hasattr(Evaluation, "is_mock"):
+            # Application-level mock filtering fallback
+            evaluations = [
+                e for e in evaluations
+                if not (e.response_text and e.response_text.startswith("[MOCK"))
+            ]
+
         return cls.aggregate_benchmark_evaluations(evaluations)

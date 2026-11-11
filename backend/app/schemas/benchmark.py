@@ -71,6 +71,7 @@ class BenchmarkExecutionSummary(BaseModel):
     average_latency_ms: float
     average_quality_score: Optional[float] = None
     completed_at: Optional[datetime] = None
+    is_mock: bool = Field(False, description="Whether execution was performed in mock simulation mode")
     message: str
 
     model_config = ConfigDict(from_attributes=True)

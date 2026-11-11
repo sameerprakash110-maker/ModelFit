@@ -12,6 +12,7 @@ class EvaluationAttemptBase(BaseModel):
     output_tokens: int = Field(0, ge=0, description="Output/completion tokens generated in this attempt")
     latency_ms: float = Field(0.0, ge=0.0, description="Latency in milliseconds for this attempt")
     execution_cost: Decimal = Field(Decimal("0"), description="Cost in USD for this attempt")
+    is_mock: bool = Field(False, description="Whether this attempt was executed in mock simulation mode")
     error_type: Optional[str] = Field(None, description="Error category if failed (timeout, api_error, etc.)")
     error_message: Optional[str] = Field(None, description="Detailed error description if failed")
 
@@ -49,6 +50,7 @@ class EvaluationBase(BaseModel):
     repeat_index: int = Field(0, ge=0, description="Repeat index for benchmark iteration")
     prompt_version: str = Field("original", description="Prompt variation version identifier")
     judge_reasoning: Optional[str] = Field(None, description="Reasoning narrative from LLM-as-a-Judge")
+    is_mock: bool = Field(False, description="Whether this evaluation was executed in mock simulation mode")
 
 
 class EvaluationCreate(EvaluationBase):

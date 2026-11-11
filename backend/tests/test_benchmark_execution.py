@@ -26,7 +26,7 @@ def _setup_benchmark_env(db, model_list=None, num_test_cases=2, repeats=1):
         db.add(tc)
     db.flush()
 
-    models = model_list or ["gemini-3.1-flash-lite", "gpt-4o"]
+    models = model_list or ["gemini-3.1-flash-lite", "qwen/qwen3.8-27b"]
     bench = Benchmark(
         project_id=proj.id,
         name="Execution Benchmark",
@@ -41,11 +41,15 @@ def _setup_benchmark_env(db, model_list=None, num_test_cases=2, repeats=1):
 
 
 def test_resolve_provider_for_model():
-    """Verify explicit model-to-provider resolution across provider families."""
+    """Verify explicit model-to-provider resolution across active provider families."""
     assert BenchmarkService.resolve_provider_for_model("gemini-3.1-flash-lite") == "gemini"
     assert BenchmarkService.resolve_provider_for_model("gemini-3.8-flash") == "gemini"
-    assert BenchmarkService.resolve_provider_for_model("gpt-4o") == "openai"
+    assert BenchmarkService.resolve_provider_for_model("qwen/qwen3.8-27b") == "groq"
     assert BenchmarkService.resolve_provider_for_model("llama-3.3-70b-versatile") == "groq"
+
+    # Models from removed providers (OpenAI) fail resolution
+    with pytest.raises(ValidationException, match="Unable to resolve provider"):
+        BenchmarkService.resolve_provider_for_model("gpt-4o")
 
     with pytest.raises(ValidationException, match="Unable to resolve provider"):
         BenchmarkService.resolve_provider_for_model("unknown-quantum-llm-9000")
@@ -124,3 +128,54 @@ async def test_run_benchmark_empty_test_cases_rejected(db_session):
 
     with pytest.raises(ValidationException, match="has no test cases"):
         await BenchmarkService.run_benchmark(bench.id, mock=True, db=db_session)
+
+
+def test_recover_abandoned_running_benchmark_with_evaluations(db_session):
+    """Verify recovering an abandoned running benchmark completes it if evaluations succeeded."""
+    bench = _setup_benchmark_env(db_session)
+    bench.status = "running"
+    db_session.commit()
+
+    # Add 1 completed evaluation
+    from app.schemas.evaluation import EvaluationCreate
+    EvaluationService.record_evaluation(
+        db_session,
+        EvaluationCreate(
+            benchmark_id=bench.id,
+            model_name="gemini-3.1-flash-lite",
+            provider_name="gemini",
+            status="completed",
+        ),
+    )
+
+    recovered = BenchmarkService.recover_benchmark(db_session, bench.id)
+    assert recovered.status == "completed"
+    assert recovered.completed_at is not None
+    assert "Recovered" in (recovered.description or "")
+
+
+def test_recover_abandoned_running_benchmark_without_evaluations(db_session):
+    """Verify recovering an abandoned running benchmark with zero evaluations marks it failed."""
+    bench = _setup_benchmark_env(db_session)
+    bench.status = "running"
+    db_session.commit()
+
+    recovered = BenchmarkService.recover_benchmark(db_session, bench.id)
+    assert recovered.status == "failed"
+    assert recovered.completed_at is not None
+    assert "Recovered" in (recovered.description or "")
+
+
+def test_recover_abandoned_benchmarks_batch(db_session):
+    """Verify batch reconciliation of multiple abandoned running benchmarks."""
+    b1 = _setup_benchmark_env(db_session)
+    b1.status = "running"
+    b2 = _setup_benchmark_env(db_session)
+    b2.status = "running"
+    b3 = _setup_benchmark_env(db_session)
+    b3.status = "completed"
+    db_session.commit()
+
+    recovered = BenchmarkService.recover_abandoned_benchmarks(db_session)
+    assert len(recovered) == 2
+    assert {r.id for r in recovered} == {b1.id, b2.id}

@@ -92,6 +92,7 @@ class BenchmarkSummaryResponse(BaseModel):
     baseline_model: Optional[str] = None
     repeats: int
     completed_at: Optional[datetime] = None
+    is_mock: bool = Field(False, description="Whether benchmark results represent mock data")
     total_evaluations: int
     successful_evaluations: int
     failed_evaluations: int
@@ -111,6 +112,7 @@ class BenchmarkReportResponse(BaseModel):
     baseline_model: Optional[str] = None
     repeats: int
     completed_at: Optional[datetime] = None
+    is_mock: bool = Field(False, description="Whether benchmark results represent mock data")
     created_at: datetime
     updated_at: datetime
     model_metrics: Dict[str, ModelAggregateMetrics]
@@ -127,4 +129,5 @@ class ROIReportResponse(BaseModel):
 
     benchmark_id: str
     monthly_volume: int
+    is_mock: bool = Field(False, description="Whether benchmark results represent mock data")
     recommendation: ROIRecommendation
