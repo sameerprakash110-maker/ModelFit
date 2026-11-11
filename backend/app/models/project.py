@@ -1,5 +1,5 @@
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
-from sqlalchemy import JSON, String, Text
+from sqlalchemy import JSON, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
 from app.models.base import TimestampMixin, UUIDPrimaryKeyMixin
@@ -7,6 +7,7 @@ from app.models.base import TimestampMixin, UUIDPrimaryKeyMixin
 if TYPE_CHECKING:
     from app.models.benchmark import Benchmark
     from app.models.test_case import TestCase
+    from app.models.user import User
 
 
 class Project(Base, UUIDPrimaryKeyMixin, TimestampMixin):
@@ -24,6 +25,14 @@ class Project(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     output_schema: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True)
     rubric: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True)
 
+    # Nullable to retain projects created before ownership was persisted.
+    owner_id: Mapped[Optional[str]] = mapped_column(
+        String(36),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=True,
+        index=True,
+    )
+
     # Relationships
     benchmarks: Mapped[List["Benchmark"]] = relationship(
         "Benchmark",
@@ -37,6 +46,7 @@ class Project(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         cascade="all, delete-orphan",
         order_by="TestCase.created_at.desc()",
     )
+    owner: Mapped[Optional["User"]] = relationship("User", back_populates="projects")
 
     def __repr__(self) -> str:
         return f"<Project(id={self.id}, name='{self.name}', domain='{self.business_domain}')>"
