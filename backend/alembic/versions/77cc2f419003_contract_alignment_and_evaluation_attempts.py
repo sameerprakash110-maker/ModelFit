@@ -267,6 +267,14 @@ def downgrade() -> None:
     # ------------------------------------------------------------------
     with op.batch_alter_table("test_cases", schema=None) as batch_op:
         batch_op.alter_column(
+            "expected_behavior",
+            existing_type=sa.Text(),
+            type_=sa.Text(),
+            existing_nullable=False,
+            nullable=True,
+            server_default=None,
+        )
+        batch_op.alter_column(
             "evaluation_criteria",
             existing_type=sa.JSON(),
             type_=sa.Text(),
