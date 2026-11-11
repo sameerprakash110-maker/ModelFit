@@ -141,9 +141,18 @@ class GeminiProvider(BaseLLMProvider):
             for part in parts
         )
 
-        usage = data.get("usageMetadata", {})
+        usage = data.get("usageMetadata") or {}
+        if not isinstance(usage, dict):
+            usage = {}
+
         prompt_tokens = int(usage.get("promptTokenCount", 0) or 0)
-        completion_tokens = int(usage.get("candidatesTokenCount", 0) or 0)
+        visible_completion_tokens = int(usage.get("candidatesTokenCount", 0) or 0)
+        thinking_tokens = int(usage.get("thoughtsTokenCount", 0) or 0)
+
+        # Gemini reports thinking tokens separately from candidate output tokens.
+        # totalTokenCount already aggregates usage, so do not use it here or the
+        # thinking tokens would be counted twice.
+        completion_tokens = visible_completion_tokens + thinking_tokens
         from app.services.cost_service import CostService
 
         calculated_cost = CostService.calculate_cost(
@@ -163,6 +172,9 @@ class GeminiProvider(BaseLLMProvider):
             is_mock=False,
             raw_metadata={
                 "usage_metadata": usage,
+                "visible_completion_tokens": visible_completion_tokens,
+                "thinking_tokens": thinking_tokens,
+                "billable_output_tokens": completion_tokens,
                 "finish_reason": candidates[0].get("finishReason"),
             },
         )
