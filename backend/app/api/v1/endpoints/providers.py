@@ -1,10 +1,11 @@
 from typing import List
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from app.core.auth import get_current_active_user
 from app.schemas.provider import ProviderHealthResponse, ProviderResponse
 from app.services.provider_service import ProviderService
 from app.services.provider_health_service import ProviderHealthService
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_active_user)])
 
 
 @router.get(

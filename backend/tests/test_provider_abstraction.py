@@ -20,6 +20,12 @@ def test_provider_factory():
         get_provider("invalid_provider")
 
 
+def test_provider_health_is_only_exposed_by_the_live_health_service():
+    """Provider configuration must not masquerade as live connectivity health."""
+    for name in ("gemini", "groq"):
+        assert not hasattr(get_provider(name), "check_health")
+
+
 def test_openai_provider_removed():
     """Verify OpenAI is no longer supported."""
 

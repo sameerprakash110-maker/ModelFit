@@ -6,13 +6,19 @@ class CostService:
     Cost calculation engine for LLM providers.
 
     All prices are USD per million tokens.
+
+    Gemini rates below are Standard paid-tier prices verified against Google's
+    Gemini API pricing page on 2026-11-11. Gemini 3.8 Flash's published
+    introductory rates end on 2026-12-31, after which its standard rates become
+    $1.50 input / $7.50 output per million tokens.
+    Source: https://ai.google.dev/gemini-api/docs/pricing
     """
 
     PRICING_TABLE: Dict[str, Tuple[float, float]] = {
-        # Google Gemini 3.x
+        # Google Gemini 3.x, Standard paid-tier rates verified 2026-11-11.
         "gemini-3.1-flash-lite": (0.25, 1.50),
-        "gemini-3.8-flash": (0.15, 0.60),
-        "gemini-3.5-flash": (0.15, 0.60),
+        "gemini-3.8-flash": (0.75, 3.75),
+        "gemini-3.5-flash": (1.50, 9.00),
 
         # Google Gemini 1.5, 2.0 & 2.5
         "gemini-2.0-flash-exp": (0.00, 0.00),
