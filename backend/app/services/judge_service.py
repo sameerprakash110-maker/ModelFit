@@ -2,7 +2,8 @@ import asyncio
 import json
 import re
 from typing import Any, Dict, Optional
-from app.providers import get_provider
+from app.providers import PROVIDER_CLASSES, get_provider
+from app.providers.registry import get_all_providers, initialize_providers
 from app.utils.logger import logger
 
 JUDGE_SYSTEM_PROMPT = """You are an expert impartial AI evaluator judging candidate LLM responses against benchmark specifications.
@@ -213,19 +214,40 @@ class JudgeService:
                 judge_model=model_name,
             )
 
+        norm_provider = provider_name.lower().strip()
+
+        # 1. Check if provider is supported by authoritative registry or factory
+        active_providers = get_all_providers()
+        if not active_providers:
+            initialize_providers()
+            active_providers = get_all_providers()
+
+        if norm_provider not in active_providers and norm_provider not in PROVIDER_CLASSES:
+            logger.warning(f"Judge provider '{provider_name}' is not supported.")
+            return {
+                "score": None,
+                "reasoning": f"Judge provider '{provider_name}' is not supported.",
+                "criteria_met": {},
+                "status": "failed",
+                "judge_model": model_name,
+                "error_type": "unsupported_provider",
+            }
+
+        # 2. Retrieve provider instance
         try:
-            provider = get_provider(provider_name)
+            provider = get_provider(norm_provider)
         except Exception as e:
             logger.warning(f"Judge provider '{provider_name}' unavailable: {e}")
             return {
                 "score": None,
-                "reasoning": f"Judge provider '{provider_name}' unavailable.",
+                "reasoning": f"Judge provider '{provider_name}' implementation is unavailable: {e}",
                 "criteria_met": {},
                 "status": "failed",
                 "judge_model": model_name,
                 "error_type": "provider_unavailable",
             }
 
+        # 3. Verify provider credentials
         if not provider.is_configured():
             logger.warning(f"Judge provider '{provider_name}' is not configured with an API key.")
             return {
@@ -274,7 +296,7 @@ class JudgeService:
                 "criteria_met": {},
                 "status": "failed",
                 "judge_model": model_name,
-                "error_type": "timeout",
+                "error_type": "judge_timeout",
             }
         except ValueError as val_err:
             logger.error(f"Judge response parsing failed: {val_err}")
@@ -284,7 +306,7 @@ class JudgeService:
                 "criteria_met": {},
                 "status": "failed",
                 "judge_model": model_name,
-                "error_type": "invalid_response_format",
+                "error_type": "invalid_judge_response",
             }
         except Exception as exc:
             # Sanitize error to avoid leaking credentials

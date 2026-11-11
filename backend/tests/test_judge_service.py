@@ -1,3 +1,4 @@
+import asyncio
 import json
 import pytest
 from app.services.judge_service import JudgeService
@@ -128,20 +129,69 @@ async def test_judge_unconfigured_provider_fails_gracefully():
     res_unconfigured = await JudgeService.evaluate(
         candidate_response="Output text",
         expected_behavior="Target text",
-        judge_provider_name="gemini",  # Registered but unconfigured without key
+        judge_provider_name="gemini",  # Registered but unconfigured without key in test env
         mock=False,
     )
     assert res_unconfigured["status"] == "failed"
     assert res_unconfigured["score"] is None
     assert res_unconfigured["error_type"] in ("unconfigured_provider", "provider_error")
 
-    # Test unregistered/removed provider
-    res_unavailable = await JudgeService.evaluate(
+    # Test unregistered/unknown provider
+    res_unknown = await JudgeService.evaluate(
         candidate_response="Output text",
         expected_behavior="Target text",
-        judge_provider_name="openai",  # Removed in PR #6
+        judge_provider_name="openai",  # Decommissioned provider
         mock=False,
     )
-    assert res_unavailable["status"] == "failed"
-    assert res_unavailable["score"] is None
-    assert res_unavailable["error_type"] == "provider_unavailable"
+    assert res_unknown["status"] == "failed"
+    assert res_unknown["score"] is None
+    assert res_unknown["error_type"] in ("unsupported_provider", "provider_error")
+
+
+@pytest.mark.asyncio
+async def test_judge_timeout_error_classification(monkeypatch):
+    """Verify timeout scenario classifies as judge_timeout."""
+    from unittest.mock import AsyncMock
+    from app.providers.gemini import GeminiProvider
+
+    monkeypatch.setattr(GeminiProvider, "is_configured", lambda self: True)
+    async def slow_generate(*args, **kwargs):
+        await asyncio.sleep(2.0)
+    monkeypatch.setattr(GeminiProvider, "generate", slow_generate)
+
+    res = await JudgeService.evaluate(
+        candidate_response="Candidate answer",
+        expected_behavior="Expected answer",
+        judge_provider_name="gemini",
+        timeout_seconds=0.01,
+        mock=False,
+    )
+    assert res["status"] == "failed"
+    assert res["error_type"] == "judge_timeout"
+    assert "timed out" in res["reasoning"].lower()
+
+
+@pytest.mark.asyncio
+async def test_judge_invalid_json_classification(monkeypatch):
+    """Verify unparseable judge output classifies as invalid_judge_response."""
+    from app.providers.base import ProviderResult
+    from app.providers.gemini import GeminiProvider
+
+    monkeypatch.setattr(GeminiProvider, "is_configured", lambda self: True)
+    async def invalid_output(*args, **kwargs):
+        return ProviderResult(
+            content="This is completely invalid and not JSON at all.",
+            model="gemini-3.1-flash-lite",
+            provider="gemini",
+        )
+    monkeypatch.setattr(GeminiProvider, "generate", invalid_output)
+
+    res = await JudgeService.evaluate(
+        candidate_response="Candidate answer",
+        expected_behavior="Expected answer",
+        judge_provider_name="gemini",
+        mock=False,
+    )
+    assert res["status"] == "failed"
+    assert res["error_type"] == "invalid_judge_response"
+    assert res["score"] is None

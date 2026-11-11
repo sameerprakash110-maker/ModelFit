@@ -220,3 +220,56 @@ def test_get_evaluations_for_benchmark_filtered(db_session):
 
     gpt4o_evals = EvaluationService.get_evaluations_for_benchmark(db_session, bench.id, model_name="gpt-4o")
     assert len(gpt4o_evals) == 2
+
+
+def test_historical_openai_records_readability(db_session):
+    """Verify that historical evaluations with provider_name='openai' remain fully readable."""
+    proj = _create_fixture_project(db_session)
+    bench = _create_fixture_benchmark(db_session, proj.id)
+    tc = _create_fixture_test_case(db_session, proj.id)
+
+    attempts = [
+        EvaluationAttemptCreate(
+            attempt_number=1,
+            input_tokens=150,
+            output_tokens=75,
+            latency_ms=320.5,
+            execution_cost=Decimal("0.00125"),
+        )
+    ]
+
+    historical_eval = EvaluationService.record_evaluation(
+        db_session,
+        EvaluationCreate(
+            benchmark_id=bench.id,
+            test_case_id=tc.id,
+            model_name="gpt-4o",
+            provider_name="openai",
+            input_tokens=150,
+            output_tokens=75,
+            execution_cost=Decimal("0.00125"),
+            latency_ms=320.5,
+            quality_score=8.5,
+            response_text="Historical output from GPT-4o before migration",
+            judge_reasoning="Evaluation conducted prior to OpenAI deprecation",
+        ),
+        attempts=attempts,
+    )
+
+    # Verify direct retrieval with attempts
+    retrieved = EvaluationService.get_evaluation_with_attempts(db_session, historical_eval.id)
+    assert retrieved is not None
+    assert retrieved.provider_name == "openai"
+    assert retrieved.model_name == "gpt-4o"
+    assert retrieved.input_tokens == 150
+    assert retrieved.output_tokens == 75
+    assert len(retrieved.attempts) == 1
+    assert retrieved.attempts[0].input_tokens == 150
+
+    # Verify query by model filter
+    openai_records = EvaluationService.get_evaluations_for_benchmark(
+        db_session, bench.id, model_name="gpt-4o"
+    )
+    assert len(openai_records) == 1
+    assert openai_records[0].id == historical_eval.id
+    assert openai_records[0].provider_name == "openai"

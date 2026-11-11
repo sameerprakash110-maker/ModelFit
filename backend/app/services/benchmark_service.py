@@ -12,6 +12,7 @@ from app.models.benchmark import Benchmark
 from app.models.project import Project
 from app.models.test_case import TestCase
 from app.providers import PROVIDER_CLASSES, get_provider
+from app.providers.registry import get_all_providers, initialize_providers
 from app.schemas.benchmark import (
     BenchmarkCreate,
     BenchmarkExecutionSummary,
@@ -25,30 +26,6 @@ from app.services.test_case_service import TestCaseService
 from app.utils.logger import logger
 
 VALID_STATUSES = {"pending", "running", "completed", "failed"}
-
-# Explicit fallback registry mapping for known model families
-KNOWN_MODEL_PROVIDERS: Dict[str, str] = {
-    # Gemini
-    "gemini-3.1-flash-lite": "gemini",
-    "gemini-3.8-flash": "gemini",
-    "gemini-3.5-flash": "gemini",
-    "gemini-2.5-flash": "gemini",
-    "gemini-2.0-flash-exp": "gemini",
-    "gemini-1.5-pro": "gemini",
-    "gemini-1.5-flash": "gemini",
-    # OpenAI
-    "gpt-4o": "openai",
-    "gpt-4o-mini": "openai",
-    "o1-preview": "openai",
-    "o1-mini": "openai",
-    # Groq (PR #5)
-    "qwen/qwen3.8-27b": "groq",
-    "openai/gpt-oss-120b": "groq",
-    "openai/gpt-oss-20b": "groq",
-    "llama-3.3-70b-versatile": "groq",
-    "llama-3.1-8b-instant": "groq",
-    "mixtral-8x7b-32768": "groq",
-}
 
 
 class BenchmarkService:
@@ -136,22 +113,17 @@ class BenchmarkService:
 
     @classmethod
     def resolve_provider_for_model(cls, model_name: str) -> str:
-        """Resolve the appropriate AI provider for a model name using registry inspection."""
+        """Resolve the appropriate AI provider for a model name using the authoritative registry."""
         normalized = model_name.strip()
 
-        # 1. Query dynamically registered provider classes
-        for provider_key, provider_cls in PROVIDER_CLASSES.items():
-            try:
-                inst = provider_cls(api_key=None)
-                if normalized in inst.supported_models:
-                    return provider_key
-            except Exception:
-                continue
+        # Query authoritative registered providers
+        active_providers = get_all_providers()
+        if not active_providers:
+            initialize_providers()
+            active_providers = get_all_providers()
 
-        # 2. Check explicit known model table (only if provider is registered in PROVIDER_CLASSES)
-        if normalized in KNOWN_MODEL_PROVIDERS:
-            provider_key = KNOWN_MODEL_PROVIDERS[normalized]
-            if provider_key in PROVIDER_CLASSES:
+        for provider_key, provider_inst in active_providers.items():
+            if normalized in provider_inst.supported_models:
                 return provider_key
 
         raise ValidationException(
@@ -204,64 +176,81 @@ class BenchmarkService:
                 provider = None
 
             if provider is not None:
-                # Retries loop
-                for attempt_num in range(1, max_retries + 1):
-                    start_time = time.perf_counter()
-                    try:
-                        result = await provider.generate(
-                            prompt=test_case.input_prompt,
-                            model=model_name,
-                            system_prompt=project_system_prompt,
-                            mock=mock,
+                # Check if provider has configured credentials (unless in mock simulation)
+                if not mock and not provider.is_configured():
+                    err_msg = f"Provider '{provider_name}' is not configured with an API key."
+                    logger.warning(f"Evaluation for {model_name} failed: {err_msg}")
+                    attempts.append(
+                        EvaluationAttemptCreate(
+                            attempt_number=1,
+                            input_tokens=0,
+                            output_tokens=0,
+                            latency_ms=0.0,
+                            execution_cost=Decimal("0"),
+                            is_mock=mock,
+                            error_type="unconfigured_provider",
+                            error_message=err_msg,
                         )
-                        latency = (time.perf_counter() - start_time) * 1000
-
-                        # Calculate USD cost from token counts
-                        cost = CostService.calculate_cost(
-                            model_name=model_name,
-                            prompt_tokens=result.prompt_tokens,
-                            completion_tokens=result.completion_tokens,
-                        )
-
-                        attempts.append(
-                            EvaluationAttemptCreate(
-                                attempt_number=attempt_num,
-                                input_tokens=result.prompt_tokens,
-                                output_tokens=result.completion_tokens,
-                                latency_ms=round(latency, 2),
-                                execution_cost=Decimal(str(cost)) if cost is not None else Decimal("0"),
-                                is_mock=mock,
-                                error_type=None,
-                                error_message=None,
+                    )
+                else:
+                    # Retries loop for model generation
+                    for attempt_num in range(1, max_retries + 1):
+                        start_time = time.perf_counter()
+                        try:
+                            result = await provider.generate(
+                                prompt=test_case.input_prompt,
+                                model=model_name,
+                                system_prompt=project_system_prompt,
+                                mock=mock,
                             )
-                        )
-                        candidate_response_text = result.content
-                        candidate_success = True
-                        break
+                            latency = (time.perf_counter() - start_time) * 1000
 
-                    except Exception as exc:
-                        latency = (time.perf_counter() - start_time) * 1000
-                        err_msg = str(exc)
-                        if "key" in err_msg.lower():
-                            err_msg = "Provider API credential or network failure."
-
-                        attempts.append(
-                            EvaluationAttemptCreate(
-                                attempt_number=attempt_num,
-                                input_tokens=0,
-                                output_tokens=0,
-                                latency_ms=round(latency, 2),
-                                execution_cost=Decimal("0"),
-                                is_mock=mock,
-                                error_type="api_error",
-                                error_message=err_msg,
+                            # Calculate USD cost from token counts
+                            cost = CostService.calculate_cost(
+                                model_name=model_name,
+                                prompt_tokens=result.prompt_tokens,
+                                completion_tokens=result.completion_tokens,
                             )
-                        )
-                        logger.warning(
-                            f"Attempt {attempt_num}/{max_retries} failed for {model_name} on test case {test_case.id}: {err_msg}"
-                        )
-                        if attempt_num < max_retries:
-                            await asyncio.sleep(0.5 * attempt_num)
+
+                            attempts.append(
+                                EvaluationAttemptCreate(
+                                    attempt_number=attempt_num,
+                                    input_tokens=result.prompt_tokens,
+                                    output_tokens=result.completion_tokens,
+                                    latency_ms=round(latency, 2),
+                                    execution_cost=Decimal(str(cost)) if cost is not None else Decimal("0"),
+                                    is_mock=mock,
+                                    error_type=None,
+                                    error_message=None,
+                                )
+                            )
+                            candidate_response_text = result.content
+                            candidate_success = True
+                            break
+
+                        except Exception as exc:
+                            latency = (time.perf_counter() - start_time) * 1000
+                            err_msg = str(exc)
+                            if "key" in err_msg.lower():
+                                err_msg = "Provider API credential or network failure."
+
+                            attempts.append(
+                                EvaluationAttemptCreate(
+                                    attempt_number=attempt_num,
+                                    input_tokens=0,
+                                    output_tokens=0,
+                                    latency_ms=round(latency, 2),
+                                    execution_cost=Decimal("0"),
+                                    is_mock=mock,
+                                    error_type="api_error",
+                                    error_message=err_msg,
+                                )
+                            )
+                            logger.warning(
+                                f"Attempt {attempt_num}/{max_retries} failed for {model_name} on test case {test_case.id}: {err_msg}"
+                            )
+                            if attempt_num < max_retries:
+                                await asyncio.sleep(0.5 * attempt_num)
 
             # Qualitative judging
             judge_score: Optional[float] = None
