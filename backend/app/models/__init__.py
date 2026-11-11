@@ -5,9 +5,11 @@ from app.models.evaluation_attempt import EvaluationAttempt
 from app.models.project import Project
 from app.models.provider import Provider
 from app.models.test_case import TestCase
+from app.models.user import User
 
 __all__ = [
     "Base",
+    "User",
     "Project",
     "Provider",
     "Benchmark",

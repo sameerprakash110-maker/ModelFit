@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.core.auth import get_current_active_user
 from app.core.database import get_db
-from app.schemas.auth import UserResponse
+from app.models.user import User
 from app.schemas.reports import BenchmarkReportResponse, ROIReportResponse
 from app.services.aggregation_service import AggregationService
 from app.services.benchmark_service import BenchmarkService
@@ -24,7 +24,7 @@ def get_benchmark_report(
     monthly_volume: int = Query(100_000, ge=100, description="Projected monthly request volume"),
     target_category: str = Query("best_value", description="Target ROI category (best_value, best_quality, lowest_cost, fastest)"),
     exclude_mock: bool = Query(False, description="Exclude mock simulation evaluations from report analytics"),
-    current_user: UserResponse = Depends(get_current_active_user),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ) -> BenchmarkReportResponse:
     """Retrieve detailed analytics, reliability, latency, token consumption, quality scores, and ROI insights, verifying ownership."""
@@ -79,7 +79,7 @@ def get_roi_recommendation(
     monthly_volume: int = Query(100_000, ge=100, description="Projected monthly request volume"),
     target_category: str = Query("best_value", description="Target ROI category (best_value, best_quality, lowest_cost, fastest)"),
     exclude_mock: bool = Query(False, description="Exclude mock simulation evaluations from ROI calculation"),
-    current_user: UserResponse = Depends(get_current_active_user),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ) -> ROIReportResponse:
     """Retrieve data-backed cost vs quality ROI recommendations and projected savings, verifying ownership."""

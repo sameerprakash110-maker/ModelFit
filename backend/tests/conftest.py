@@ -11,6 +11,7 @@ from sqlalchemy.pool import StaticPool
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from app.core.database import Base, get_db
+import app.models  # Ensure all SQLAlchemy models are registered on Base.metadata
 from app.models.test_case import TestCase
 from app.main import app
 
@@ -68,16 +69,17 @@ def db_session() -> Generator[Session, None, None]:
 
 
 @pytest.fixture
-def test_user():
+def test_user(db_session: Session):
     from app.services.auth_service import AuthService
     from app.schemas.auth import UserCreate
 
     return AuthService.create_user(
+        db_session,
         UserCreate(
             email="test_engineer@modelfit.com",
             password="SecurePassword123!",
             full_name="ModelFit Test User",
-        )
+        ),
     )
 
 

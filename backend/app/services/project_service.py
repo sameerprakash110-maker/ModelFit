@@ -1,5 +1,5 @@
 from typing import List, Optional
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 from app.core.exceptions import EntityNotFoundException
 from app.models.project import Project
@@ -11,9 +11,17 @@ class ProjectService:
     """Service layer handling project CRUD operations and business rules."""
 
     @staticmethod
-    def get_projects(db: Session, skip: int = 0, limit: int = 100) -> List[Project]:
-        """Fetch a paginated list of projects."""
-        query = select(Project).order_by(Project.created_at.desc()).offset(skip).limit(limit)
+    def get_projects(
+        db: Session,
+        user_id: Optional[str] = None,
+        skip: int = 0,
+        limit: int = 100,
+    ) -> List[Project]:
+        """Fetch a paginated list of projects, filtered by owner user_id at SQL level."""
+        query = select(Project)
+        if user_id:
+            query = query.where(or_(Project.owner_id == user_id, Project.owner_id.is_(None)))
+        query = query.order_by(Project.created_at.desc()).offset(skip).limit(limit)
         return list(db.scalars(query).all())
 
     @staticmethod
@@ -31,8 +39,12 @@ class ProjectService:
         return project
 
     @staticmethod
-    def create_project(db: Session, project_in: ProjectCreate) -> Project:
-        """Create and persist a new project."""
+    def create_project(
+        db: Session,
+        project_in: ProjectCreate,
+        owner_id: Optional[str] = None,
+    ) -> Project:
+        """Create and persist a new project with persistent database owner_id."""
         project = Project(
             name=project_in.name,
             description=project_in.description,
@@ -40,11 +52,12 @@ class ProjectService:
             system_prompt=project_in.system_prompt,
             output_schema=project_in.output_schema,
             rubric=project_in.rubric,
+            owner_id=owner_id,
         )
         db.add(project)
         db.commit()
         db.refresh(project)
-        logger.info(f"Created project: {project.id} ({project.name})")
+        logger.info(f"Created project: {project.id} ({project.name}) with owner {owner_id}")
         return project
 
     @staticmethod

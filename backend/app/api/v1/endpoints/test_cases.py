@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.core.auth import get_current_active_user
 from app.core.database import get_db
-from app.schemas.auth import UserResponse
+from app.models.user import User
 from app.schemas.test_case import TestCaseCreate, TestCaseResponse, TestCaseUpdate
 from app.services.ownership_service import OwnershipService
 from app.services.test_case_service import TestCaseService
@@ -20,7 +20,7 @@ router = APIRouter()
 )
 def create_test_case(
     test_case_in: TestCaseCreate,
-    current_user: UserResponse = Depends(get_current_active_user),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ) -> TestCaseResponse:
     """Create and persist a new evaluation workload / test case, verifying parent project ownership."""
@@ -37,7 +37,7 @@ def list_test_cases(
     project_id: Optional[str] = Query(None, description="Filter test cases by project UUID"),
     skip: int = Query(0, ge=0, description="Pagination skip offset"),
     limit: int = Query(100, ge=1, le=500, description="Max test cases to return"),
-    current_user: UserResponse = Depends(get_current_active_user),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ) -> List[TestCaseResponse]:
     """Retrieve test cases belonging to user-owned projects."""
@@ -56,7 +56,7 @@ def list_test_cases(
 )
 def get_test_case(
     test_case_id: str,
-    current_user: UserResponse = Depends(get_current_active_user),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ) -> TestCaseResponse:
     """Retrieve a specific test case by UUID, verifying parent project ownership."""
@@ -71,7 +71,7 @@ def get_test_case(
 def update_test_case(
     test_case_id: str,
     test_case_in: TestCaseUpdate,
-    current_user: UserResponse = Depends(get_current_active_user),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ) -> TestCaseResponse:
     """Update an existing test case, verifying parent project ownership."""
@@ -86,7 +86,7 @@ def update_test_case(
 )
 def delete_test_case(
     test_case_id: str,
-    current_user: UserResponse = Depends(get_current_active_user),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ) -> None:
     """Delete a test case by UUID, verifying parent project ownership."""

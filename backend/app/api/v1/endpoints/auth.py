@@ -1,6 +1,9 @@
 from fastapi import APIRouter, Depends, status
+from sqlalchemy.orm import Session
 
 from app.core.auth import get_current_active_user
+from app.core.database import get_db
+from app.models.user import User
 from app.schemas.auth import Token, UserCreate, UserLogin, UserResponse
 from app.services.auth_service import AuthService
 
@@ -13,9 +16,12 @@ router = APIRouter()
     status_code=status.HTTP_201_CREATED,
     summary="Register a new user account",
 )
-def signup(user_in: UserCreate) -> Token:
-    """Create a new user account, hash password using Argon2id, and return JWT access token."""
-    user = AuthService.create_user(user_in)
+def signup(
+    user_in: UserCreate,
+    db: Session = Depends(get_db),
+) -> Token:
+    """Create a new user account in database, hash password using Argon2id, and return JWT access token."""
+    user = AuthService.create_user(db, user_in)
     return AuthService.create_user_token(user)
 
 
@@ -24,9 +30,12 @@ def signup(user_in: UserCreate) -> Token:
     response_model=Token,
     summary="Authenticate user and receive JWT access token",
 )
-def login(user_in: UserLogin) -> Token:
-    """Authenticate with email and password, returning a signed JWT access token."""
-    user = AuthService.authenticate_user(user_in)
+def login(
+    user_in: UserLogin,
+    db: Session = Depends(get_db),
+) -> Token:
+    """Authenticate with email and password from database, returning a signed JWT access token."""
+    user = AuthService.authenticate_user(db, user_in)
     return AuthService.create_user_token(user)
 
 
@@ -35,6 +44,8 @@ def login(user_in: UserLogin) -> Token:
     response_model=UserResponse,
     summary="Retrieve current authenticated user profile",
 )
-def get_me(current_user: UserResponse = Depends(get_current_active_user)) -> UserResponse:
+def get_me(
+    current_user: User = Depends(get_current_active_user),
+) -> UserResponse:
     """Return the profile of the currently authenticated user."""
-    return current_user
+    return UserResponse.model_validate(current_user)

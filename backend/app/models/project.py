@@ -1,5 +1,5 @@
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
-from sqlalchemy import JSON, String, Text
+from sqlalchemy import ForeignKey, JSON, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
 from app.models.base import TimestampMixin, UUIDPrimaryKeyMixin
@@ -7,6 +7,7 @@ from app.models.base import TimestampMixin, UUIDPrimaryKeyMixin
 if TYPE_CHECKING:
     from app.models.benchmark import Benchmark
     from app.models.test_case import TestCase
+    from app.models.user import User
 
 
 class Project(Base, UUIDPrimaryKeyMixin, TimestampMixin):
@@ -20,11 +21,24 @@ class Project(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     # system_prompt is required (NOT NULL) per the database contract
     system_prompt: Mapped[str] = mapped_column(Text, nullable=False)
 
+    # Multi-user ownership: links project to its creator User.
+    # Nullable for backward compatibility with historical legacy projects.
+    owner_id: Mapped[Optional[str]] = mapped_column(
+        String(36),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=True,
+        index=True,
+    )
+
     # --- Additive nullable JSON columns for output formatting and scoring rubric ---
     output_schema: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True)
     rubric: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True)
 
     # Relationships
+    owner: Mapped[Optional["User"]] = relationship(
+        "User",
+        back_populates="projects",
+    )
     benchmarks: Mapped[List["Benchmark"]] = relationship(
         "Benchmark",
         back_populates="project",
