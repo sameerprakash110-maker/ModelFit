@@ -1,6 +1,6 @@
 import { useId, useState } from 'react'
 import type { FormEvent } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { SiteFooter } from '../../components/landing/SiteFooter.tsx'
 import { Wordmark } from '../../components/landing/Wordmark.tsx'
 import { logIn, signUp } from '../../services/auth.ts'
@@ -41,6 +41,7 @@ export default function AuthPage({ mode }: { mode: 'signup' | 'login' }) {
   const copy = COPY[mode]
   const id = useId()
   const location = useLocation()
+  const navigate = useNavigate()
   const cameFromLab = (location.state as { from?: string } | null)?.from?.startsWith('/app') ?? false
 
   const [email, setEmail] = useState('')
@@ -66,7 +67,12 @@ export default function AuthPage({ mode }: { mode: 'signup' | 'login' }) {
     setSubmitting(true)
     try {
       const credentials = { email: email.trim(), password }
-      setResult(await (mode === 'signup' ? signUp(credentials) : logIn(credentials)))
+      const authResult = await (mode === 'signup' ? signUp(credentials) : logIn(credentials))
+      setResult(authResult)
+      if (authResult.status === 'ok') {
+        const dest = (location.state as { from?: string } | null)?.from || '/app'
+        navigate(dest, { replace: true })
+      }
     } catch {
       setResult({ status: 'error', message: 'The account service could not be reached. Try again in a moment.' })
     } finally {
@@ -93,7 +99,7 @@ export default function AuthPage({ mode }: { mode: 'signup' | 'login' }) {
 
         <form className="auth-panel" onSubmit={onSubmit} noValidate>
           <p className="auth-notice">
-            Demo build. Accounts are not connected yet, so this form can't {mode === 'signup' ? 'create' : 'open'} one.
+            Enter your credentials to {mode === 'signup' ? 'create a ModelFit account' : 'sign in to ModelFit'}.
           </p>
 
           <div className="auth-field">
@@ -139,6 +145,7 @@ export default function AuthPage({ mode }: { mode: 'signup' | 'login' }) {
           <div aria-live="polite">
             {result?.status === 'not-connected' && <p className="auth-result">{copy.notConnected}</p>}
             {result?.status === 'error' && <p className="auth-result is-error">{result.message}</p>}
+            {result?.status === 'ok' && <p className="auth-result is-success">Success! Redirecting to workspace...</p>}
           </div>
 
           <p className="auth-switch">

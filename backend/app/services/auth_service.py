@@ -1,56 +1,25 @@
-from dataclasses import dataclass
-from datetime import datetime, timezone
-import threading
-from typing import Dict, Optional
-
+from typing import Optional
 from fastapi import HTTPException, status
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 from app.core.security import (
     create_access_token,
     hash_password,
     verify_password,
 )
+from app.models.user import User
 from app.schemas.auth import Token, UserCreate, UserLogin, UserResponse
-from app.utils.helpers import generate_uuid, utc_now
 from app.utils.logger import logger
 
 
-@dataclass
-class UserRecord:
-    """Internal user entity with Argon2id password hash."""
-    id: str
-    email: str
-    hashed_password: str
-    full_name: Optional[str]
-    is_active: bool
-    created_at: datetime
-    updated_at: datetime
-
-    def to_response(self) -> UserResponse:
-        return UserResponse(
-            id=self.id,
-            email=self.email,
-            full_name=self.full_name,
-            is_active=self.is_active,
-            created_at=self.created_at,
-            updated_at=self.updated_at,
-        )
-
-
 class AuthService:
-    """Authentication service managing user registration, verification and JWT issuance."""
-
-    # Thread-safe in-memory user registry protecting against concurrent access
-    _lock = threading.RLock()
-    _users: Dict[str, UserRecord] = {}  # user_id -> UserRecord
-    _email_index: Dict[str, str] = {}   # normalized_email -> user_id
+    """Persistent database-backed authentication service managing user registration, verification, and JWT issuance."""
 
     @classmethod
     def reset_store(cls) -> None:
-        """Clear user store for test isolation."""
-        with cls._lock:
-            cls._users.clear()
-            cls._email_index.clear()
+        """Retained for test isolation compatibility."""
+        pass
 
     @classmethod
     def normalize_email(cls, email: str) -> str:
@@ -58,8 +27,8 @@ class AuthService:
         return email.strip().lower()
 
     @classmethod
-    def create_user(cls, user_in: UserCreate) -> UserResponse:
-        """Register a new user with Argon2id hashed password."""
+    def create_user(cls, db: Session, user_in: UserCreate) -> User:
+        """Register a new user in the database with Argon2id hashed password."""
         normalized_email = cls.normalize_email(str(user_in.email))
 
         if len(user_in.password) < 8:
@@ -68,43 +37,41 @@ class AuthService:
                 detail="Password must be at least 8 characters long",
             )
 
-        with cls._lock:
-            if normalized_email in cls._email_index:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="A user with this email already exists",
-                )
-
-            user_id = generate_uuid()
-            now = utc_now()
-            hashed_pwd = hash_password(user_in.password)
-
-            record = UserRecord(
-                id=user_id,
-                email=normalized_email,
-                hashed_password=hashed_pwd,
-                full_name=user_in.full_name,
-                is_active=True,
-                created_at=now,
-                updated_at=now,
+        # Enforce unique email constraint at service level
+        existing = db.scalars(
+            select(User).where(User.email == normalized_email)
+        ).first()
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="A user with this email already exists",
             )
 
-            cls._users[user_id] = record
-            cls._email_index[normalized_email] = user_id
+        hashed_pwd = hash_password(user_in.password)
+        user = User(
+            email=normalized_email,
+            hashed_password=hashed_pwd,
+            full_name=user_in.full_name,
+            is_active=True,
+        )
 
-        logger.info(f"Created new user account: {user_id} ({normalized_email})")
-        return record.to_response()
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+
+        logger.info(f"Persisted new user account: {user.id} ({normalized_email})")
+        return user
 
     @classmethod
-    def authenticate_user(cls, user_in: UserLogin) -> UserResponse:
-        """Authenticate user by email and password, returning user profile."""
+    def authenticate_user(cls, db: Session, user_in: UserLogin) -> User:
+        """Authenticate user by email and password, returning persistent user entity."""
         normalized_email = cls.normalize_email(str(user_in.email))
 
-        with cls._lock:
-            user_id = cls._email_index.get(normalized_email)
-            record = cls._users.get(user_id) if user_id else None
+        user = db.scalars(
+            select(User).where(User.email == normalized_email)
+        ).first()
 
-        if not record or not verify_password(user_in.password, record.hashed_password):
+        if not user or not verify_password(user_in.password, user.hashed_password):
             logger.warning(f"Failed login attempt for email: {normalized_email}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -112,55 +79,51 @@ class AuthService:
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
-        if not record.is_active:
-            logger.warning(f"Login rejected for disabled user: {record.id}")
+        if not user.is_active:
+            logger.warning(f"Login rejected for disabled user: {user.id}")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Inactive user account",
             )
 
-        logger.info(f"User authenticated successfully: {record.id}")
-        return record.to_response()
+        logger.info(f"User authenticated successfully: {user.id}")
+        return user
 
     @classmethod
-    def get_user_by_id(cls, user_id: str) -> Optional[UserResponse]:
-        """Fetch user by primary UUID."""
-        with cls._lock:
-            record = cls._users.get(user_id)
-            return record.to_response() if record else None
+    def get_user_by_id(cls, db: Session, user_id: str) -> Optional[User]:
+        """Fetch persistent user entity by primary UUID."""
+        return db.scalars(select(User).where(User.id == user_id)).first()
 
     @classmethod
-    def get_user_record_by_id(cls, user_id: str) -> Optional[UserRecord]:
-        """Fetch internal user record including active status."""
-        with cls._lock:
-            return cls._users.get(user_id)
-
-    @classmethod
-    def get_user_by_email(cls, email: str) -> Optional[UserResponse]:
-        """Fetch user by email address."""
+    def get_user_by_email(cls, db: Session, email: str) -> Optional[User]:
+        """Fetch persistent user entity by normalized email address."""
         normalized_email = cls.normalize_email(email)
-        with cls._lock:
-            user_id = cls._email_index.get(normalized_email)
-            if not user_id:
-                return None
-            record = cls._users.get(user_id)
-            return record.to_response() if record else None
+        return db.scalars(select(User).where(User.email == normalized_email)).first()
 
     @classmethod
-    def set_user_active(cls, user_id: str, is_active: bool) -> None:
-        """Update active status of a user."""
-        with cls._lock:
-            record = cls._users.get(user_id)
-            if record:
-                record.is_active = is_active
-                record.updated_at = utc_now()
+    def set_user_active(cls, db: Session, user_id: str, is_active: bool) -> None:
+        """Update active status of a user in the database."""
+        user = cls.get_user_by_id(db, user_id)
+        if user:
+            user.is_active = is_active
+            db.add(user)
+            db.commit()
+            db.refresh(user)
 
     @classmethod
-    def create_user_token(cls, user: UserResponse) -> Token:
+    def create_user_token(cls, user: User) -> Token:
         """Generate JWT access token for user."""
         access_token = create_access_token(subject=user.id)
+        user_response = UserResponse(
+            id=user.id,
+            email=user.email,
+            full_name=user.full_name,
+            is_active=user.is_active,
+            created_at=user.created_at,
+            updated_at=user.updated_at,
+        )
         return Token(
             access_token=access_token,
             token_type="bearer",
-            user=user,
+            user=user_response,
         )

@@ -21,6 +21,15 @@ class Project(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     # system_prompt is required (NOT NULL) per the database contract
     system_prompt: Mapped[str] = mapped_column(Text, nullable=False)
 
+    # Multi-user ownership: links project to its creator User.
+    # Nullable for backward compatibility with historical legacy projects.
+    owner_id: Mapped[Optional[str]] = mapped_column(
+        String(36),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=True,
+        index=True,
+    )
+
     # --- Additive nullable JSON columns for output formatting and scoring rubric ---
     output_schema: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True)
     rubric: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True)
@@ -34,6 +43,10 @@ class Project(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     )
 
     # Relationships
+    owner: Mapped[Optional["User"]] = relationship(
+        "User",
+        back_populates="projects",
+    )
     benchmarks: Mapped[List["Benchmark"]] = relationship(
         "Benchmark",
         back_populates="project",
