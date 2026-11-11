@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import TYPE_CHECKING, List, Optional
-from sqlalchemy import DateTime, ForeignKey, Integer, JSON, String, Text
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, JSON, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
 from app.models.base import TimestampMixin, UUIDPrimaryKeyMixin
@@ -30,6 +30,8 @@ class Benchmark(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         nullable=False,
         index=True,
     )
+    # Distinguishes simulated benchmark runs from provider-backed live runs.
+    is_mock: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, index=True)
 
     # --- Additive benchmark configuration columns ---
     completed_at: Mapped[Optional[datetime]] = mapped_column(
