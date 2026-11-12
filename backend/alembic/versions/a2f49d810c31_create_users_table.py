@@ -8,6 +8,7 @@ from typing import Sequence, Union
 
 import sqlalchemy as sa
 from alembic import op
+from app.core.schema_migration_helpers import ensure_users_table
 
 
 revision: str = "a2f49d810c31"
@@ -17,19 +18,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.create_table(
-        "users",
-        sa.Column("email", sa.String(length=320), nullable=False),
-        sa.Column("hashed_password", sa.String(length=255), nullable=False),
-        sa.Column("full_name", sa.String(length=255), nullable=True),
-        sa.Column("is_active", sa.Boolean(), nullable=False, server_default=sa.true()),
-        sa.Column("id", sa.String(length=36), nullable=False),
-        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
-        sa.PrimaryKeyConstraint("id"),
-    )
-    op.create_index("ix_users_id", "users", ["id"], unique=False)
-    op.create_index("ix_users_email", "users", ["email"], unique=True)
+    ensure_users_table()
 
 
 def downgrade() -> None:

@@ -43,6 +43,8 @@ const decimalFormatter = new Intl.NumberFormat(LOCALE, { maximumFractionDigits: 
 
 export const formatCount = (value: number) => countFormatter.format(value)
 
+export const wordCount = (text: string) => text.trim().split(/\s+/).filter(Boolean).length
+
 export function formatSignedCount(value: number): string {
   const rounded = Math.round(value)
   if (rounded === 0) return '0'
@@ -73,3 +75,38 @@ export function regroup(text: string): string {
   const value = parseNumber(text)
   return value === null ? text : decimalFormatter.format(value)
 }
+
+/*
+  The backend prices models in US dollars (providers publish USD rates).
+  Shown in rupees at this rate. Override with VITE_USD_TO_INR in frontend/.env.
+*/
+export const USD_TO_INR: number = (() => {
+  const fromEnv = Number(import.meta.env.VITE_USD_TO_INR)
+  return Number.isFinite(fromEnv) && fromEnv > 0 ? fromEnv : 88
+})()
+
+export const usdToInr = (usd: number) => usd * USD_TO_INR
+
+/** Milliseconds, switching to seconds once it reads better: 342 ms, 1.4 s. */
+export function formatMs(ms: number): string {
+  // Only simulated runs come in under a millisecond; keep two decimals so they stay distinguishable.
+  if (ms > 0 && ms < 1) return `${Number(ms.toFixed(2))} ms`
+  if (ms >= 1000) return `${Number((ms / 1000).toFixed(ms >= 10_000 ? 0 : 1))} s`
+  return `${Math.round(ms)} ms`
+}
+
+const dateFormatter = new Intl.DateTimeFormat(LOCALE, { day: 'numeric', month: 'short', year: 'numeric' })
+const dateTimeFormatter = new Intl.DateTimeFormat(LOCALE, {
+  day: 'numeric',
+  month: 'short',
+  hour: 'numeric',
+  minute: '2-digit',
+})
+
+/* The backend sends naive UTC timestamps (no zone suffix); read them as UTC. */
+function parseServerDate(value: string): Date {
+  return new Date(/[zZ]|[+-]\d\d:\d\d$/.test(value) ? value : `${value}Z`)
+}
+
+export const formatDate = (value: string) => dateFormatter.format(parseServerDate(value))
+export const formatDateTime = (value: string) => dateTimeFormatter.format(parseServerDate(value))

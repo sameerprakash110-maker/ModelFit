@@ -30,6 +30,15 @@ class CostService:
         "qwen/qwen3.8-27b": (0.80, 4.00),
         "openai/gpt-oss-120b": (0.15, 0.60),
         "openai/gpt-oss-20b": (0.075, 0.30),
+
+        # OpenRouter, from its public model catalog (openrouter.ai/api/v1/models) on 2026-11-11.
+        "anthropic/claude-haiku-5.5": (0.10, 0.50),
+        "anthropic/claude-sonnet-5.5": (2.00, 10.00),
+        "openai/gpt-6-luna": (0.10, 0.50),
+        "openai/gpt-6.1-terra": (1.00, 5.00),
+        "deepseek/deepseek-v4.1-flash": (0.051, 0.567),
+        "mistralai/mistral-large-4-0": (0.70, 2.10),
+        "x-ai/grok-4.7": (2.00, 6.00),
     }
 
     @classmethod

@@ -10,6 +10,11 @@ from sqlalchemy.pool import StaticPool
 # Ensure backend root is on sys.path regardless of execution context
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
+# Tests never call real providers. Blank every provider key before the app reads
+# settings; environment variables override backend/.env, so real keys there are ignored.
+for _key in ("GEMINI_API_KEY", "GROQ_API_KEY", "OPENROUTER_API_KEY"):
+    os.environ[_key] = ""
+
 from app.core.database import Base, get_db
 import app.models  # Ensure all SQLAlchemy models are registered on Base.metadata
 from app.models.test_case import TestCase
@@ -49,6 +54,8 @@ def setup_test_database():
     from app.services.auth_service import AuthService
     from app.services.ownership_service import OwnershipService
 
+    # Point account storage at the isolated test database, never the dev DB file
+    AuthService._session_factory = TestingSessionLocal
     Base.metadata.create_all(bind=test_engine)
     AuthService.reset_store()
     OwnershipService.reset_store()

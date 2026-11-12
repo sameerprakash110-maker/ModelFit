@@ -1,9 +1,9 @@
 import { useId, useState } from 'react'
 import type { FormEvent } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { SiteFooter } from '../../components/landing/SiteFooter.tsx'
 import { Wordmark } from '../../components/landing/Wordmark.tsx'
-import { logIn, signUp } from '../../services/auth.ts'
+import { isAuthenticated, logIn, signUp } from '../../services/auth.ts'
 import type { AuthResult } from '../../services/auth.ts'
 import '../../styles/site.css'
 import './auth.css'
@@ -13,7 +13,6 @@ const COPY = {
     title: 'Sign up for ModelFit',
     pitch: 'Bring a workload. Leave with a verdict.',
     submit: 'Sign Up',
-    notConnected: 'Nothing was sent. Sign-up will work once the account service is connected.',
     switchPrompt: 'Already have an account?',
     switchLabel: 'Log In',
     switchTo: '/login',
@@ -22,7 +21,6 @@ const COPY = {
     title: 'Log in to ModelFit',
     pitch: 'Your workloads and past runs are where you left them.',
     submit: 'Log In',
-    notConnected: 'Nothing was sent. Log-in will work once the account service is connected.',
     switchPrompt: 'New to ModelFit?',
     switchLabel: 'Sign Up',
     switchTo: '/signup',
@@ -34,21 +32,24 @@ const MIN_PASSWORD_LENGTH = 8
 
 /*
   Entry point to the account system for the public website. The form
-  validates and then hands off to services/auth.ts, which is the integration
-  point. Until that is connected the page says so, before and after submitting.
+  validates locally, then services/auth.ts calls the backend. On success the
+  visitor goes to the page they were trying to reach, or the lab.
 */
 export default function AuthPage({ mode }: { mode: 'signup' | 'login' }) {
   const copy = COPY[mode]
   const id = useId()
   const location = useLocation()
   const navigate = useNavigate()
-  const cameFromLab = (location.state as { from?: string } | null)?.from?.startsWith('/app') ?? false
+  const from = (location.state as { from?: string } | null)?.from
+  const cameFromLab = from?.startsWith('/app') ?? false
+  const destination = cameFromLab && from ? from : '/app'
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({})
   const [submitting, setSubmitting] = useState(false)
   const [result, setResult] = useState<AuthResult | null>(null)
+  const [alreadySignedIn] = useState(isAuthenticated)
 
   const onSubmit = async (event: FormEvent) => {
     event.preventDefault()
@@ -67,18 +68,20 @@ export default function AuthPage({ mode }: { mode: 'signup' | 'login' }) {
     setSubmitting(true)
     try {
       const credentials = { email: email.trim(), password }
-      const authResult = await (mode === 'signup' ? signUp(credentials) : logIn(credentials))
-      setResult(authResult)
-      if (authResult.status === 'ok') {
-        const dest = (location.state as { from?: string } | null)?.from || '/app'
-        navigate(dest, { replace: true })
+      const outcome = await (mode === 'signup' ? signUp(credentials) : logIn(credentials))
+      if (outcome.status === 'ok') {
+        navigate(destination, { replace: true })
+        return
       }
+      setResult(outcome)
     } catch {
       setResult({ status: 'error', message: 'The account service could not be reached. Try again in a moment.' })
     } finally {
       setSubmitting(false)
     }
   }
+
+  if (alreadySignedIn) return <Navigate to={destination} replace />
 
   return (
     <div className="lp plain-page">
@@ -139,17 +142,19 @@ export default function AuthPage({ mode }: { mode: 'signup' | 'login' }) {
           </div>
 
           <button type="submit" className="btn btn--on-light" disabled={submitting}>
-            {copy.submit}
+            {submitting ? 'One moment…' : copy.submit}
           </button>
 
           <div aria-live="polite">
-            {result?.status === 'not-connected' && <p className="auth-result">{copy.notConnected}</p>}
             {result?.status === 'error' && <p className="auth-result is-error">{result.message}</p>}
             {result?.status === 'ok' && <p className="auth-result is-success">Success! Redirecting to workspace...</p>}
           </div>
 
           <p className="auth-switch">
-            {copy.switchPrompt} <Link to={copy.switchTo}>{copy.switchLabel}</Link>
+            {copy.switchPrompt}{' '}
+            <Link to={copy.switchTo} state={location.state}>
+              {copy.switchLabel}
+            </Link>
           </p>
         </form>
       </main>

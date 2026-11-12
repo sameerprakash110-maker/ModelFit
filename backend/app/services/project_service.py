@@ -46,13 +46,13 @@ class ProjectService:
     ) -> Project:
         """Create and persist a new project with persistent database owner_id."""
         project = Project(
+            owner_id=owner_id,
             name=project_in.name,
             description=project_in.description,
             business_domain=project_in.business_domain,
             system_prompt=project_in.system_prompt,
             output_schema=project_in.output_schema,
             rubric=project_in.rubric,
-            owner_id=owner_id,
         )
         db.add(project)
         db.commit()

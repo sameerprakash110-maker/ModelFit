@@ -18,29 +18,19 @@ class Project(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     business_domain: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
-    # system_prompt is required (NOT NULL) per the database contract
-    system_prompt: Mapped[str] = mapped_column(Text, nullable=False)
-
-    # Multi-user ownership: links project to its creator User.
-    # Nullable for backward compatibility with historical legacy projects.
+    # Owning user. Nullable so projects created before accounts existed stay readable.
     owner_id: Mapped[Optional[str]] = mapped_column(
         String(36),
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=True,
         index=True,
     )
+    # system_prompt is required (NOT NULL) per the database contract
+    system_prompt: Mapped[str] = mapped_column(Text, nullable=False)
 
     # --- Additive nullable JSON columns for output formatting and scoring rubric ---
     output_schema: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True)
     rubric: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True)
-
-    # Nullable to retain projects created before ownership was persisted.
-    owner_id: Mapped[Optional[str]] = mapped_column(
-        String(36),
-        ForeignKey("users.id", ondelete="CASCADE"),
-        nullable=True,
-        index=True,
-    )
 
     # Relationships
     owner: Mapped[Optional["User"]] = relationship(
@@ -59,7 +49,5 @@ class Project(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         cascade="all, delete-orphan",
         order_by="TestCase.created_at.desc()",
     )
-    owner: Mapped[Optional["User"]] = relationship("User", back_populates="projects")
-
     def __repr__(self) -> str:
         return f"<Project(id={self.id}, name='{self.name}', domain='{self.business_domain}')>"

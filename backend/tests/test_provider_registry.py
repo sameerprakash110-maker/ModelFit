@@ -16,12 +16,13 @@ def isolated_registry():
     registry._provider_registry.update(original)
 
 
-def test_initialize_providers_registers_gemini_and_groq_with_configured_keys(
+def test_initialize_providers_registers_all_providers_with_configured_keys(
     monkeypatch, isolated_registry
 ):
     settings = SimpleNamespace(
         GEMINI_API_KEY="gemini-test-key",
         GROQ_API_KEY="groq-test-key",
+        OPENROUTER_API_KEY="openrouter-test-key",
     )
     monkeypatch.setattr(registry, "get_settings", Mock(return_value=settings))
 
@@ -31,12 +32,16 @@ def test_initialize_providers_registers_gemini_and_groq_with_configured_keys(
     groq_constructor = Mock(return_value=groq)
     monkeypatch.setattr(registry, "GeminiProvider", gemini_constructor)
     monkeypatch.setattr(registry, "GroqProvider", groq_constructor)
+    openrouter = SimpleNamespace(provider_name="openrouter")
+    openrouter_constructor = Mock(return_value=openrouter)
+    monkeypatch.setattr(registry, "OpenRouterProvider", openrouter_constructor)
 
     registry.initialize_providers()
 
     gemini_constructor.assert_called_once_with(api_key="gemini-test-key")
     groq_constructor.assert_called_once_with(api_key="groq-test-key")
-    assert registry.get_all_providers() == {"gemini": gemini, "groq": groq}
+    openrouter_constructor.assert_called_once_with(api_key="openrouter-test-key")
+    assert registry.get_all_providers() == {"gemini": gemini, "groq": groq, "openrouter": openrouter}
 
 
 @pytest.mark.parametrize("name", ["gemini", "groq"])

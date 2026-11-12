@@ -12,6 +12,11 @@ from typing import Sequence, Union
 
 import sqlalchemy as sa
 from alembic import op
+from app.core.schema_migration_helpers import (
+    ensure_attempt_mock_flag,
+    ensure_project_owner,
+    ensure_users_table,
+)
 
 
 revision: str = "f1b2c3d4e5a6"
@@ -21,42 +26,10 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    """Create users table, add project.owner_id and evaluation_attempts.is_mock."""
-    # 1. Create users table
-    op.create_table(
-        "users",
-        sa.Column("id", sa.String(length=36), nullable=False),
-        sa.Column("email", sa.String(length=255), nullable=False),
-        sa.Column("hashed_password", sa.String(length=255), nullable=False),
-        sa.Column("full_name", sa.String(length=255), nullable=True),
-        sa.Column("is_active", sa.Boolean(), nullable=False, server_default=sa.true()),
-        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
-        sa.PrimaryKeyConstraint("id"),
-    )
-    op.create_index("ix_users_email", "users", ["email"], unique=True)
-    op.create_index("ix_users_id", "users", ["id"], unique=False)
-
-    # 2. Add owner_id to projects
-    with op.batch_alter_table("projects", schema=None) as batch_op:
-        batch_op.add_column(
-            sa.Column("owner_id", sa.String(length=36), nullable=True)
-        )
-        batch_op.create_foreign_key(
-            "fk_projects_owner_id_users",
-            "users",
-            ["owner_id"],
-            ["id"],
-            ondelete="CASCADE",
-        )
-        batch_op.create_index("ix_projects_owner_id", ["owner_id"], unique=False)
-
-    # 3. Add is_mock to evaluation_attempts
-    with op.batch_alter_table("evaluation_attempts", schema=None) as batch_op:
-        batch_op.add_column(
-            sa.Column("is_mock", sa.Boolean(), nullable=False, server_default=sa.false())
-        )
-        batch_op.create_index("ix_evaluation_attempts_is_mock", ["is_mock"], unique=False)
+    """Converge on the auth schema if another revision path already applied part."""
+    ensure_users_table()
+    ensure_project_owner()
+    ensure_attempt_mock_flag()
 
 
 def downgrade() -> None:

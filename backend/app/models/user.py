@@ -11,14 +11,14 @@ if TYPE_CHECKING:
 
 
 class User(Base, UUIDPrimaryKeyMixin, TimestampMixin):
-    """Persisted user account metadata and password hash."""
+    """A persisted ModelFit account. Passwords are stored only as Argon2id hashes."""
 
     __tablename__ = "users"
 
-    email: Mapped[str] = mapped_column(String(320), nullable=False, unique=True, index=True)
+    email: Mapped[str] = mapped_column(String(320), unique=True, index=True, nullable=False)
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
     full_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
-    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False, server_default="1")
 
     projects: Mapped[List["Project"]] = relationship(
         "Project",

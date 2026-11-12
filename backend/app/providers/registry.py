@@ -4,6 +4,7 @@ from app.core.config import get_settings
 from app.providers.base import BaseLLMProvider
 from app.providers.gemini import GeminiProvider
 from app.providers.groq import GroqProvider
+from app.providers.openrouter import OpenRouterProvider
 
 _provider_registry: Dict[str, BaseLLMProvider] = {}
 
@@ -40,4 +41,8 @@ def initialize_providers():
 
     register_provider(
         GroqProvider(api_key=settings.GROQ_API_KEY)
+    )
+
+    register_provider(
+        OpenRouterProvider(api_key=getattr(settings, "OPENROUTER_API_KEY", None))
     )

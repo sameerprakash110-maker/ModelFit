@@ -1,16 +1,18 @@
-/*
-  ModelFit Frontend Authentication Service
-  Connects the web client to the backend authentication endpoints (/api/v1/auth/signup, /api/v1/auth/login, /api/v1/auth/me)
-  and manages JWT session persistence via localStorage.
-*/
-import axios from 'axios'
+﻿/*
+ * Authentication against the ModelFit backend (/api/v1/auth).
+ * The JWT is stored locally and attached to authenticated API requests.
+ */
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api/v1'
+const TOKEN_KEY = 'modelfit_access_token'
+const USER_KEY = 'modelfit_user'
 
 export interface Credentials {
   email: string
   password: string
 }
 
-export interface UserProfile {
+export interface User {
   id: string
   email: string
   full_name: string | null
@@ -19,140 +21,160 @@ export interface UserProfile {
   updated_at: string
 }
 
-export interface AuthSuccessPayload {
-  access_token: string
-  token_type: string
-  user: UserProfile
-}
+export type UserProfile = User
+export type AuthResult = { status: 'ok' } | { status: 'error'; message: string }
 
-export type AuthResult =
-  | { status: 'ok' }
-  | { status: 'error'; message: string }
-  | { status: 'not-connected' }
+const UNREACHABLE = 'The account service could not be reached. Check that the backend is running, then try again.'
 
-const API_BASE_URL = (import.meta as unknown as { env?: { VITE_API_BASE_URL?: string } }).env?.VITE_API_BASE_URL || '/api/v1'
-const TOKEN_KEY = 'modelfit_access_token'
-const USER_KEY = 'modelfit_user'
-
-function extractErrorMessage(err: unknown, fallback: string): string {
-  if (err && typeof err === 'object') {
-    const errorObj = err as { response?: { data?: { detail?: unknown; error?: { message?: string } } }; message?: string }
-    if (errorObj.response?.data) {
-      const data = errorObj.response.data
-      if (typeof data.detail === 'string') return data.detail
-      if (typeof data.error?.message === 'string') return data.error.message
-      if (Array.isArray(data.detail) && data.detail.length > 0) {
-        const first = data.detail[0] as { msg?: string }
-        if (first?.msg) return first.msg
-      }
-    }
-    if (typeof errorObj.message === 'string') {
-      return errorObj.message
-    }
-  }
-  return fallback
-}
-
-export function saveSession(token: string, user: UserProfile): void {
+function storageGet(key: string): string | null {
   try {
-    localStorage.setItem(TOKEN_KEY, token)
-    localStorage.setItem(USER_KEY, JSON.stringify(user))
+    return localStorage.getItem(key)
   } catch {
-    // Ignore localStorage failures in sandboxed contexts
+    return null
   }
 }
 
-export function clearSession(): void {
+function storageSet(key: string, value: string): void {
   try {
-    localStorage.removeItem(TOKEN_KEY)
-    localStorage.removeItem(USER_KEY)
+    localStorage.setItem(key, value)
   } catch {
-    // Ignore
+    // The session can still be used for this page even if storage is unavailable.
   }
+}
+
+function storageRemove(key: string): void {
+  try {
+    localStorage.removeItem(key)
+  } catch {
+    // Ignore unavailable storage.
+  }
+}
+
+function tokenExpiry(token: string): number | null {
+  try {
+    const payload = token.split('.')[1]
+    const json = atob(payload.replace(/-/g, '+').replace(/_/g, '/'))
+    const exp = (JSON.parse(json) as { exp?: unknown }).exp
+    return typeof exp === 'number' ? exp : null
+  } catch {
+    return null
+  }
+}
+
+export function getAuthToken(): string | null {
+  const token = storageGet(TOKEN_KEY)
+  if (!token) return null
+  const exp = tokenExpiry(token)
+  if (exp === null || exp * 1000 <= Date.now()) {
+    logOut()
+    return null
+  }
+  return token
 }
 
 export function getToken(): string | null {
-  try {
-    return localStorage.getItem(TOKEN_KEY)
-  } catch {
-    return null
-  }
-}
-
-export function getCurrentUser(): UserProfile | null {
-  try {
-    const userStr = localStorage.getItem(USER_KEY)
-    return userStr ? JSON.parse(userStr) : null
-  } catch {
-    return null
-  }
-}
-
-export async function signUp(credentials: Credentials): Promise<AuthResult> {
-  try {
-    const response = await axios.post<AuthSuccessPayload>(`${API_BASE_URL}/auth/signup`, {
-      email: credentials.email,
-      password: credentials.password,
-    })
-    if (response.data?.access_token) {
-      saveSession(response.data.access_token, response.data.user)
-      return { status: 'ok' }
-    }
-    return { status: 'error', message: 'No access token received from authentication server.' }
-  } catch (err: unknown) {
-    return {
-      status: 'error',
-      message: extractErrorMessage(err, 'Failed to create account. Please try again.'),
-    }
-  }
-}
-
-export async function logIn(credentials: Credentials): Promise<AuthResult> {
-  try {
-    const response = await axios.post<AuthSuccessPayload>(`${API_BASE_URL}/auth/login`, {
-      email: credentials.email,
-      password: credentials.password,
-    })
-    if (response.data?.access_token) {
-      saveSession(response.data.access_token, response.data.user)
-      return { status: 'ok' }
-    }
-    return { status: 'error', message: 'No access token received from authentication server.' }
-  } catch (err: unknown) {
-    return {
-      status: 'error',
-      message: extractErrorMessage(err, 'Incorrect email or password.'),
-    }
-  }
+  return getAuthToken()
 }
 
 export function isAuthenticated(): boolean {
-  const token = getToken()
-  if (!token) return false
+  return getAuthToken() !== null
+}
 
+export function getStoredUser(): User | null {
+  const raw = storageGet(USER_KEY)
+  if (!raw) return null
   try {
-    const parts = token.split('.')
-    if (parts.length === 3) {
-      const payload = JSON.parse(atob(parts[1]))
-      if (payload.exp && typeof payload.exp === 'number') {
-        const now = Math.floor(Date.now() / 1000)
-        if (payload.exp < now) {
-          clearSession()
-          return false
-        }
-      }
-    }
+    return JSON.parse(raw) as User
   } catch {
-    // Fall back to token presence if atob fails
+    return null
   }
-  return true
+}
+
+export function getCurrentUser(): User | null {
+  return getStoredUser()
 }
 
 export function logOut(): void {
-  clearSession()
+  storageRemove(TOKEN_KEY)
+  storageRemove(USER_KEY)
+}
+
+export function clearSession(): void {
+  logOut()
+}
+
+export function saveSession(token: string, user: User): void {
+  storageSet(TOKEN_KEY, token)
+  storageSet(USER_KEY, JSON.stringify(user))
+}
+
+async function errorMessage(res: Response, fallback: string): Promise<string> {
+  try {
+    const body = (await res.json()) as {
+      detail?: string | { msg?: string }[]
+      error?: { message?: string }
+    }
+    if (typeof body.detail === 'string') return body.detail
+    if (Array.isArray(body.detail) && body.detail[0]?.msg) {
+      return body.detail[0].msg.replace(/^Value error, /, '')
+    }
+    if (body.error?.message) return body.error.message
+  } catch {
+    // Non-JSON response, such as a proxy error page.
+  }
+  return res.status >= 500 ? UNREACHABLE : fallback
+}
+
+async function authenticate(
+  path: 'signup' | 'login',
+  credentials: Credentials,
+  fallback: string,
+): Promise<AuthResult> {
+  let res: Response
+  try {
+    res = await fetch(`${API_BASE_URL}/auth/${path}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(credentials),
+    })
+  } catch {
+    return { status: 'error', message: UNREACHABLE }
+  }
+
+  if (!res.ok) return { status: 'error', message: await errorMessage(res, fallback) }
+
+  const data = (await res.json()) as { access_token: string; user: User }
+  saveSession(data.access_token, data.user)
+  return { status: 'ok' }
+}
+
+export function signUp(credentials: Credentials): Promise<AuthResult> {
+  return authenticate('signup', credentials, 'Sign-up failed. Try again.')
+}
+
+export function logIn(credentials: Credentials): Promise<AuthResult> {
+  return authenticate('login', credentials, 'Incorrect email or password.')
 }
 
 export function getAuthHeaders(): { Authorization?: string } {
-  const token = getToken()
+  const token = getAuthToken()
   return token ? { Authorization: `Bearer ${token}` } : {}
+}
+
+export async function authFetch(path: string, init: RequestInit = {}): Promise<Response> {
+  const headers = new Headers(init.headers)
+  const token = getAuthToken()
+  if (token) headers.set('Authorization', `Bearer ${token}`)
+  const res = await fetch(`${API_BASE_URL}${path}`, { ...init, headers })
+  if (res.status === 401) logOut()
+  return res
+}
+
+export async function fetchCurrentUser(): Promise<User | null> {
+  if (!getAuthToken()) return null
+  const res = await authFetch('/auth/me')
+  if (!res.ok) return null
+  const user = (await res.json()) as User
+  storageSet(USER_KEY, JSON.stringify(user))
+  return user
 }

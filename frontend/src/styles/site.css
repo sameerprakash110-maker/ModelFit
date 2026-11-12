@@ -64,28 +64,28 @@
 .lp .h2 {
   margin: 0;
   font-family: var(--font-display);
-  font-weight: 800;
-  font-variation-settings: 'wdth' 112;
-  font-size: clamp(2.1rem, 5.2vw, 4rem);
-  line-height: 0.98;
-  letter-spacing: -0.01em;
+  font-weight: 650;
+  font-size: clamp(2rem, 4.2vw, 3.4rem);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
   text-wrap: balance;
 }
 
 .lp .h3 {
   margin: 0;
   font-family: var(--font-display);
-  font-weight: 700;
-  font-variation-settings: 'wdth' 92;
-  font-size: 1.5rem;
-  line-height: 1.15;
+  font-weight: 600;
+  font-size: 1.375rem;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
 }
 
 .lp .lede {
   margin: 0;
-  font-size: clamp(1.1rem, 1.6vw, 1.3rem);
-  line-height: 1.5;
+  font-size: clamp(1.08rem, 1.5vw, 1.25rem);
+  line-height: 1.55;
   max-width: 38em;
+  opacity: 0.86;
 }
 
 /* Section heading block, closed off by a line of stitching. */
@@ -126,13 +126,35 @@
 
 /* ---------- Wordmark ---------- */
 
+/* Lowercase and soft, with a short length of tape stitched under "fit". */
 .lp .wordmark {
+  display: inline-flex;
+  align-items: baseline;
   font-family: var(--font-display);
-  font-weight: 800;
-  font-size: 1.5rem;
+  font-weight: 700;
+  font-size: 1.45rem;
   line-height: 1;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.04em;
   white-space: nowrap;
+}
+
+.lp .wordmark-fit {
+  position: relative;
+  margin-left: 0.03em;
+}
+
+.lp .wordmark-fit::after {
+  content: '';
+  position: absolute;
+  right: -0.06em;
+  bottom: -0.26em;
+  left: 0.02em;
+  height: 0.2em;
+  border-radius: 1px;
+  background-color: var(--color-tape);
+  background-image: repeating-linear-gradient(90deg, rgb(13 18 56 / 0.7) 0 1px, transparent 1px 0.17em);
+  background-size: 100% 50%;
+  background-repeat: no-repeat;
 }
 
 /* ---------- Buttons and links ---------- */
@@ -145,11 +167,11 @@
   justify-content: center;
   padding: 1rem 1.6rem;
   border: 0;
-  border-radius: 2px;
+  border-radius: 6px;
   background: var(--color-tape);
   color: var(--color-ink);
   font: inherit;
-  font-weight: 700;
+  font-weight: 600;
   font-size: 1.0625rem;
   line-height: 1.2;
   text-decoration: none;
@@ -162,8 +184,8 @@
   content: '';
   position: absolute;
   inset: 5px;
-  border: 1.5px dashed var(--color-ink);
-  border-radius: 1px;
+  border: 1.5px dashed rgb(13 18 56 / 0.55);
+  border-radius: 3px;
   pointer-events: none;
   transition: inset 140ms ease;
 }
@@ -197,15 +219,16 @@
 
 .lp .btn--outline {
   background: transparent;
-  color: #fff;
+  color: var(--color-ink);
+  box-shadow: inset 0 0 0 1.5px rgb(13 18 56 / 0.85);
 }
 
 .lp .btn--outline::after {
-  border-color: rgb(255 255 255 / 0.85);
+  content: none;
 }
 
 .lp .btn--outline:hover {
-  background: rgb(255 255 255 / 0.14);
+  background: rgb(13 18 56 / 0.05);
 }
 
 .lp .btn--on-light {
@@ -282,7 +305,6 @@
   transform: translateX(-50%);
   font-family: var(--font-display);
   font-weight: 700;
-  font-variation-settings: 'wdth' 80;
   font-size: 0.95rem;
   line-height: 1;
   color: var(--color-ink);
@@ -383,7 +405,6 @@
   border-bottom: 2px solid var(--color-ink);
   font-family: var(--font-display);
   font-weight: 700;
-  font-variation-settings: 'wdth' 90;
   font-size: 1.6rem;
   line-height: 1.35;
 }
@@ -401,7 +422,6 @@
   border-radius: 0;
   background: none;
   font: inherit;
-  font-variation-settings: inherit;
   color: inherit;
   font-variant-numeric: tabular-nums;
 }
@@ -610,19 +630,21 @@
 /* ---------- Top bar ---------- */
 
 .lp .site-nav {
-  --focus: var(--color-tape);
+  --focus: var(--color-chalk);
   position: sticky;
   top: 0;
   z-index: 50;
-  background: var(--color-chalk);
-  color: #fff;
-  border-bottom: 1px dashed transparent;
+  background: rgb(244 246 251 / 0.84);
+  -webkit-backdrop-filter: saturate(1.6) blur(14px);
+  backdrop-filter: saturate(1.6) blur(14px);
+  color: var(--color-ink);
+  border-bottom: 1px solid transparent;
   transition: border-color 200ms ease;
 }
 
 .lp .site-nav.is-compact,
 .lp .site-nav.is-open {
-  border-bottom-color: rgb(255 255 255 / 0.55);
+  border-bottom-color: rgb(13 18 56 / 0.1);
 }
 
 .lp .site-nav-bar {
@@ -654,7 +676,7 @@
   margin: 0 0.75rem 0 0;
   padding: 0;
   list-style: none;
-  font-weight: 600;
+  font-weight: 500;
   font-size: 0.98rem;
 }
 
@@ -663,7 +685,7 @@
   padding-block: 0.35rem;
   border-bottom: 2px dashed transparent;
   color: inherit;
-  font-weight: 600;
+  font-weight: 500;
   font-size: 0.98rem;
   text-decoration: none;
   white-space: nowrap;
@@ -675,7 +697,7 @@
 }
 
 .lp .site-nav-links a[aria-current] {
-  border-bottom: 2px solid var(--color-tape);
+  border-bottom: 2px solid var(--color-chalk);
 }
 
 .lp .site-nav-account {
@@ -689,8 +711,8 @@
   width: 2.75rem;
   height: 2.75rem;
   padding: 0;
-  border: 1.5px dashed rgb(255 255 255 / 0.75);
-  border-radius: 2px;
+  border: 1.5px solid rgb(13 18 56 / 0.25);
+  border-radius: 6px;
   background: none;
   color: inherit;
   cursor: pointer;
@@ -702,8 +724,8 @@
 }
 
 .lp .site-menu {
-  background: var(--color-chalk-deep);
-  border-top: 1px dashed rgb(255 255 255 / 0.4);
+  background: #fff;
+  border-top: 1px solid rgb(13 18 56 / 0.08);
 }
 
 .lp .site-menu ul {
@@ -715,17 +737,47 @@
 .lp .site-menu a {
   display: block;
   padding: 0.9rem 0;
-  border-bottom: 1px dashed rgb(255 255 255 / 0.3);
-  color: #fff;
+  border-bottom: 1px dashed rgb(13 18 56 / 0.15);
+  color: var(--color-ink);
   font-family: var(--font-display);
-  font-weight: 700;
-  font-variation-settings: 'wdth' 96;
-  font-size: 1.3rem;
+  font-weight: 600;
+  font-size: 1.25rem;
+  letter-spacing: -0.01em;
   text-decoration: none;
 }
 
 .lp .site-menu li:last-child a {
   border-bottom: 0;
+}
+
+/* Log Out is an action, so it is a <button>; make it look like the links it sits beside. */
+.lp button.site-nav-login,
+.lp button.stitch-link,
+.lp .site-menu button {
+  border-top: 0;
+  border-inline: 0;
+  border-radius: 0;
+  background: none;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.lp button.site-nav-login,
+.lp button.stitch-link {
+  padding-inline: 0;
+  font-size: inherit;
+}
+
+.lp .site-menu button {
+  display: block;
+  width: 100%;
+  padding: 0.9rem 0;
+  border-bottom: 0;
+  color: var(--color-ink);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.25rem;
+  text-align: left;
 }
 
 @media (max-width: 23rem) {
@@ -831,12 +883,14 @@
 /* ---------- Plain pages: sign up, log in, legal placeholders ---------- */
 
 .lp.plain-page {
-  --focus: var(--color-tape);
+  --focus: var(--color-chalk);
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background: var(--color-chalk);
-  color: #fff;
+  background:
+    radial-gradient(60rem 30rem at 85% -10%, rgb(36 55 230 / 0.07), transparent 70%),
+    var(--color-paper);
+  color: var(--color-ink);
 }
 
 .lp .plain-top {
