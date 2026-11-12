@@ -11,6 +11,7 @@ from typing import Sequence, Union
 
 import sqlalchemy as sa
 from alembic import op
+from app.core.schema_migration_helpers import ensure_users_table
 
 
 revision: str = "b3f1c7a9e2d4"
@@ -20,20 +21,8 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    """Create the users table. Additive only."""
-    op.create_table(
-        "users",
-        sa.Column("id", sa.String(length=36), nullable=False),
-        sa.Column("email", sa.String(length=255), nullable=False),
-        sa.Column("hashed_password", sa.String(length=255), nullable=False),
-        sa.Column("full_name", sa.String(length=255), nullable=True),
-        sa.Column("is_active", sa.Boolean(), nullable=False, server_default="1"),
-        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
-        sa.PrimaryKeyConstraint("id"),
-    )
-    op.create_index("ix_users_id", "users", ["id"], unique=False)
-    op.create_index("ix_users_email", "users", ["email"], unique=True)
+    """Create users if needed; another published branch may already have done so."""
+    ensure_users_table()
 
 
 def downgrade() -> None:

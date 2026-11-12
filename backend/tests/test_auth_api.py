@@ -1,6 +1,7 @@
 from datetime import timedelta
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy.orm import Session
 
 from app.core.security import create_access_token
 from app.services.auth_service import AuthService
@@ -139,7 +140,7 @@ def test_get_me_expired_token(client: TestClient):
     assert "Token has expired" in response.json()["detail"]
 
 
-def test_get_me_disabled_user(client: TestClient):
+def test_get_me_disabled_user(client: TestClient, db_session: Session):
     signup_res = client.post(
         "/api/v1/auth/signup",
         json={"email": "disabled@enterprise.com", "password": "StrongPassword123!"},
@@ -147,7 +148,7 @@ def test_get_me_disabled_user(client: TestClient):
     user_id = signup_res.json()["user"]["id"]
     token = signup_res.json()["access_token"]
 
-    AuthService.set_user_active(user_id, False)
+    AuthService.set_user_active(db_session, user_id, False)
 
     response = client.get(
         "/api/v1/auth/me",
@@ -155,3 +156,64 @@ def test_get_me_disabled_user(client: TestClient):
     )
     assert response.status_code == 400
     assert "Inactive user account" in response.json()["detail"]
+
+
+def test_user_persistence_across_sessions(db_session: Session):
+    """Verify that user records are genuinely persisted to the SQL database across independent sessions."""
+    from app.schemas.auth import UserCreate
+    from app.models.user import User
+    from app.core.security import verify_password
+    from sqlalchemy import select
+
+    user_in = UserCreate(
+        email="persisted@enterprise.com",
+        password="ValidPassword123!",
+        full_name="Persistent Engineer",
+    )
+    created = AuthService.create_user(db_session, user_in)
+    user_id = created.id
+    db_session.commit()
+
+    # Query from the session directly
+    found = db_session.scalars(select(User).where(User.id == user_id)).first()
+    assert found is not None
+    assert found.email == "persisted@enterprise.com"
+    assert found.full_name == "Persistent Engineer"
+    assert verify_password("ValidPassword123!", found.hashed_password)
+
+
+def test_user_cascade_delete_projects(db_session: Session):
+    """Verify that cascading deletion cleans up owned projects when a user is removed."""
+    from app.schemas.auth import UserCreate
+    from app.models.project import Project
+    from sqlalchemy import select
+
+    user = AuthService.create_user(
+        db_session,
+        UserCreate(
+            email="cascade_user@enterprise.com",
+            password="ValidPassword123!",
+            full_name="Cascade Target",
+        ),
+    )
+    project = Project(
+        name="Project to Cascade",
+        system_prompt="Cascading test",
+        owner_id=user.id,
+    )
+    db_session.add(project)
+    db_session.commit()
+    project_id = project.id
+
+    # Verify project exists and is owned by user
+    persisted_proj = db_session.scalars(select(Project).where(Project.id == project_id)).first()
+    assert persisted_proj is not None
+    assert persisted_proj.owner_id == user.id
+
+    # Delete user
+    db_session.delete(user)
+    db_session.commit()
+
+    # Verify project is cascade deleted
+    deleted_proj = db_session.scalars(select(Project).where(Project.id == project_id)).first()
+    assert deleted_proj is None

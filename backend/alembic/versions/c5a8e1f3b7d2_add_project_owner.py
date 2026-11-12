@@ -11,6 +11,7 @@ from typing import Sequence, Union
 
 import sqlalchemy as sa
 from alembic import op
+from app.core.schema_migration_helpers import ensure_project_owner
 
 
 revision: str = "c5a8e1f3b7d2"
@@ -20,12 +21,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    with op.batch_alter_table("projects", schema=None) as batch_op:
-        batch_op.add_column(sa.Column("owner_id", sa.String(length=36), nullable=True))
-        batch_op.create_index("ix_projects_owner_id", ["owner_id"], unique=False)
-        batch_op.create_foreign_key(
-            "fk_projects_owner_id_users", "users", ["owner_id"], ["id"], ondelete="CASCADE"
-        )
+    ensure_project_owner()
 
 
 def downgrade() -> None:

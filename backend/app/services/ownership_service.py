@@ -1,5 +1,4 @@
-import threading
-from typing import Dict, List, Optional
+from typing import List, Optional
 from sqlalchemy.orm import Session
 
 from app.core.exceptions import EntityNotFoundException
@@ -15,7 +14,7 @@ from app.utils.logger import logger
 
 
 class OwnershipService:
-    """Enforces cascading multi-user resource ownership and authorization checks.
+    """Enforces persistent database-level multi-user resource ownership and authorization checks.
     
     Hierarchy:
     User -> Project -> Benchmark -> Evaluation -> EvaluationAttempt
@@ -23,30 +22,15 @@ class OwnershipService:
     User -> Project -> Benchmark -> Reports & ROI
     """
 
-    _lock = threading.RLock()
-    _project_owners: Dict[str, str] = {}  # project_id -> user_id
-
     @classmethod
     def reset_store(cls) -> None:
-        """Clear project owner mappings for test isolation."""
-        with cls._lock:
-            cls._project_owners.clear()
-
-    @classmethod
-    def record_project_owner(cls, project_id: str, user_id: str) -> None:
-        """Associate a project with its creator/owner user UUID."""
-        with cls._lock:
-            cls._project_owners[project_id] = user_id
-        logger.info(f"Associated project {project_id} with owner {user_id}")
+        """Retained for test isolation compatibility."""
+        pass
 
     @classmethod
     def get_project_owner(cls, project: Project) -> Optional[str]:
-        """Resolve owner UUID from database column or fallback application registry."""
-        db_owner = getattr(project, "owner_id", None)
-        if db_owner:
-            return db_owner
-        with cls._lock:
-            return cls._project_owners.get(project.id)
+        """Resolve owner UUID from persistent database column."""
+        return project.owner_id
 
     @classmethod
     def verify_project_access(
@@ -55,16 +39,17 @@ class OwnershipService:
         project_id: str,
         user_id: str,
     ) -> Project:
-        """Verify that the user owns the specified project. Raises 404 if not found or unauthorized."""
+        """Verify that the user owns the specified project via database column.
+        Raises 404 if not found or unauthorized to prevent resource enumeration.
+        """
         project = ProjectService.get_project_by_id(db, project_id)
         if not project:
             raise EntityNotFoundException("Project", project_id)
 
-        owner = cls.get_project_owner(project)
-        # If an owner is assigned and does not match the requester, return 404 to hide resource existence
-        if owner and owner != user_id:
+        # If project has an assigned owner_id and does not match requester, return 404
+        if project.owner_id and project.owner_id != user_id:
             logger.warning(
-                f"Unauthorized project access attempt: user {user_id} tried to access project {project_id} owned by {owner}"
+                f"Unauthorized project access attempt: user {user_id} tried to access project {project_id} owned by {project.owner_id}"
             )
             raise EntityNotFoundException("Project", project_id)
 
@@ -82,7 +67,7 @@ class OwnershipService:
         if not benchmark:
             raise EntityNotFoundException("Benchmark", benchmark_id)
 
-        # Cascading check via parent project
+        # Cascading check via parent project in database
         cls.verify_project_access(db, benchmark.project_id, user_id)
         return benchmark
 
@@ -122,12 +107,11 @@ class OwnershipService:
         projects: List[Project],
         user_id: str,
     ) -> List[Project]:
-        """Filter a list of projects so only those owned by the user are returned."""
-        with cls._lock:
-            return [
-                p for p in projects
-                if (cls.get_project_owner(p) == user_id or cls.get_project_owner(p) is None)
-            ]
+        """Filter projects for user."""
+        return [
+            p for p in projects
+            if (p.owner_id == user_id or p.owner_id is None)
+        ]
 
     @classmethod
     def filter_benchmarks_for_user(

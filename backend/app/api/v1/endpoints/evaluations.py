@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.core.auth import get_current_active_user
 from app.core.database import get_db
-from app.schemas.auth import UserResponse
+from app.models.user import User
 from app.schemas.evaluation import (
     EvaluationCreate,
     EvaluationDetailResponse,
@@ -24,7 +24,7 @@ router = APIRouter()
 )
 def record_evaluation(
     evaluation_in: EvaluationCreate,
-    current_user: UserResponse = Depends(get_current_active_user),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ) -> EvaluationResponse:
     """Record an evaluation outcome for a test case execution, verifying parent benchmark ownership."""
@@ -39,7 +39,7 @@ def record_evaluation(
 )
 def list_benchmark_evaluations(
     benchmark_id: str,
-    current_user: UserResponse = Depends(get_current_active_user),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ) -> List[EvaluationResponse]:
     """Retrieve all evaluation records associated with a specific benchmark run, verifying ownership."""
@@ -54,7 +54,7 @@ def list_benchmark_evaluations(
 )
 def get_evaluation(
     evaluation_id: str,
-    current_user: UserResponse = Depends(get_current_active_user),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ) -> EvaluationDetailResponse:
     """Retrieve an evaluation record along with all individual invocation attempts, verifying ownership."""

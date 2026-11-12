@@ -1,5 +1,6 @@
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy.orm import Session
 
 from app.core.security import create_access_token
 from app.schemas.auth import UserCreate
@@ -7,28 +8,30 @@ from app.services.auth_service import AuthService
 
 
 @pytest.fixture
-def user_a_client(client: TestClient) -> tuple[TestClient, str, str]:
+def user_a_client(client: TestClient, db_session: Session) -> tuple[TestClient, str, str]:
     """Create User A and return (client, user_id, token)."""
     user_a = AuthService.create_user(
+        db_session,
         UserCreate(
             email="usera@company.com",
             password="PasswordUserA123!",
             full_name="User Alpha",
-        )
+        ),
     )
     token_a = create_access_token(user_a.id)
     return client, user_a.id, token_a
 
 
 @pytest.fixture
-def user_b_client(client: TestClient) -> tuple[TestClient, str, str]:
+def user_b_client(client: TestClient, db_session: Session) -> tuple[TestClient, str, str]:
     """Create User B and return (client, user_id, token)."""
     user_b = AuthService.create_user(
+        db_session,
         UserCreate(
             email="userb@company.com",
             password="PasswordUserB123!",
             full_name="User Beta",
-        )
+        ),
     )
     token_b = create_access_token(user_b.id)
     return client, user_b.id, token_b

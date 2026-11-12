@@ -94,3 +94,65 @@ def test_get_and_delete_test_case(client: TestClient):
 
     # Verify 404
     assert client.get(f"/api/v1/test-cases/{test_case_id}").status_code == 404
+
+
+def test_partial_test_case_update_may_omit_expected_behavior(client: TestClient):
+    project_id = _make_project(client, "Partial Update Project")
+    created = client.post(
+        "/api/v1/test-cases",
+        json={
+            "project_id": project_id,
+            "input_prompt": "Original prompt",
+            "expected_behavior": "Original expectation",
+        },
+    )
+    test_case_id = created.json()["id"]
+
+    response = client.put(
+        f"/api/v1/test-cases/{test_case_id}",
+        json={"input_prompt": "Updated prompt"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["input_prompt"] == "Updated prompt"
+    assert response.json()["expected_behavior"] == "Original expectation"
+
+
+def test_partial_test_case_update_rejects_explicit_null_expected_behavior(client: TestClient):
+    project_id = _make_project(client, "Null Update Project")
+    created = client.post(
+        "/api/v1/test-cases",
+        json={
+            "project_id": project_id,
+            "input_prompt": "Prompt",
+            "expected_behavior": "Expectation",
+        },
+    )
+
+    response = client.put(
+        f"/api/v1/test-cases/{created.json()['id']}",
+        json={"expected_behavior": None},
+    )
+
+    assert response.status_code == 422
+    assert any(error["loc"][-1] == "expected_behavior" for error in response.json()["detail"])
+
+
+def test_partial_test_case_update_accepts_non_null_expected_behavior(client: TestClient):
+    project_id = _make_project(client, "Valid Update Project")
+    created = client.post(
+        "/api/v1/test-cases",
+        json={
+            "project_id": project_id,
+            "input_prompt": "Prompt",
+            "expected_behavior": "Old expectation",
+        },
+    )
+
+    response = client.put(
+        f"/api/v1/test-cases/{created.json()['id']}",
+        json={"expected_behavior": "Updated expectation"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["expected_behavior"] == "Updated expectation"

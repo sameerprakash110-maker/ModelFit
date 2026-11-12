@@ -1,3 +1,5 @@
+from unittest.mock import Mock
+
 import pytest
 from app.core.exceptions import ValidationException
 from app.models.benchmark import Benchmark
@@ -373,13 +375,22 @@ async def test_run_benchmark_groq_openai_prefixed_model_e2e(db_session):
 
 
 @pytest.mark.asyncio
-async def test_run_benchmark_unconfigured_provider_records_failed_evaluation(db_session):
+async def test_run_benchmark_unconfigured_provider_records_failed_evaluation(
+    db_session, monkeypatch
+):
     """Verify supported provider with missing API key records failed evaluation instead of being dropped."""
     bench = _setup_benchmark_env(
         db_session,
         model_list=["gemini-3.1-flash-lite"],
         num_test_cases=1,
         repeats=1,
+    )
+
+    unconfigured_provider = Mock()
+    unconfigured_provider.is_configured.return_value = False
+    monkeypatch.setattr(
+        "app.services.benchmark_service.get_provider",
+        lambda provider_name: unconfigured_provider,
     )
 
     summary = await BenchmarkService.run_benchmark(
@@ -398,6 +409,7 @@ async def test_run_benchmark_unconfigured_provider_records_failed_evaluation(db_
     eval_record = evals[0]
     assert eval_record.status == "failed"
     assert len(eval_record.attempts) == 1
+    unconfigured_provider.is_configured.assert_called_once_with()
     attempt = eval_record.attempts[0]
     assert attempt.error_type == "unconfigured_provider"
     assert "not configured" in (attempt.error_message or "").lower()

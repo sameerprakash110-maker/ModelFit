@@ -1,13 +1,9 @@
-/*
-  Authentication against the ModelFit backend (/api/v1/auth).
+﻿/*
+ * Authentication against the ModelFit backend (/api/v1/auth).
+ * The JWT is stored locally and attached to authenticated API requests.
+ */
 
-  The backend returns a JWT on sign-up and log-in. It is kept in localStorage
-  and sent as `Authorization: Bearer <token>` by authFetch(). In development
-  the Vite dev server proxies /api to the backend (see vite.config.ts), so no
-  CORS setup is needed. Set VITE_API_BASE_URL to point somewhere else.
-*/
-
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? '/api/v1'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api/v1'
 const TOKEN_KEY = 'modelfit_access_token'
 const USER_KEY = 'modelfit_user'
 
@@ -25,11 +21,10 @@ export interface User {
   updated_at: string
 }
 
+export type UserProfile = User
 export type AuthResult = { status: 'ok' } | { status: 'error'; message: string }
 
 const UNREACHABLE = 'The account service could not be reached. Check that the backend is running, then try again.'
-
-/* ---------- storage ---------- */
 
 function storageGet(key: string): string | null {
   try {
@@ -39,23 +34,22 @@ function storageGet(key: string): string | null {
   }
 }
 
-function storageSet(key: string, value: string) {
+function storageSet(key: string, value: string): void {
   try {
     localStorage.setItem(key, value)
   } catch {
-    // Storage blocked (private mode etc.). The session just won't persist.
+    // The session can still be used for this page even if storage is unavailable.
   }
 }
 
-function storageRemove(key: string) {
+function storageRemove(key: string): void {
   try {
     localStorage.removeItem(key)
   } catch {
-    // ignore
+    // Ignore unavailable storage.
   }
 }
 
-/** Reads the `exp` claim (seconds) without verifying. The server verifies; this only avoids using a dead token. */
 function tokenExpiry(token: string): number | null {
   try {
     const payload = token.split('.')[1]
@@ -78,12 +72,14 @@ export function getAuthToken(): string | null {
   return token
 }
 
-/** Whether the visitor has an unexpired session token. */
+export function getToken(): string | null {
+  return getAuthToken()
+}
+
 export function isAuthenticated(): boolean {
   return getAuthToken() !== null
 }
 
-/** The signed-in user as of the last sign-up, log-in or fetchCurrentUser(). */
 export function getStoredUser(): User | null {
   const raw = storageGet(USER_KEY)
   if (!raw) return null
@@ -94,14 +90,24 @@ export function getStoredUser(): User | null {
   }
 }
 
+export function getCurrentUser(): User | null {
+  return getStoredUser()
+}
+
 export function logOut(): void {
   storageRemove(TOKEN_KEY)
   storageRemove(USER_KEY)
 }
 
-/* ---------- requests ---------- */
+export function clearSession(): void {
+  logOut()
+}
 
-/** Turns any backend error body into one readable sentence. */
+export function saveSession(token: string, user: User): void {
+  storageSet(TOKEN_KEY, token)
+  storageSet(USER_KEY, JSON.stringify(user))
+}
+
 async function errorMessage(res: Response, fallback: string): Promise<string> {
   try {
     const body = (await res.json()) as {
@@ -114,13 +120,16 @@ async function errorMessage(res: Response, fallback: string): Promise<string> {
     }
     if (body.error?.message) return body.error.message
   } catch {
-    // Not JSON (e.g. proxy error page)
+    // Non-JSON response, such as a proxy error page.
   }
-  if (res.status >= 500) return UNREACHABLE
-  return fallback
+  return res.status >= 500 ? UNREACHABLE : fallback
 }
 
-async function authenticate(path: 'signup' | 'login', credentials: Credentials, fallback: string): Promise<AuthResult> {
+async function authenticate(
+  path: 'signup' | 'login',
+  credentials: Credentials,
+  fallback: string,
+): Promise<AuthResult> {
   let res: Response
   try {
     res = await fetch(`${API_BASE_URL}/auth/${path}`, {
@@ -135,8 +144,7 @@ async function authenticate(path: 'signup' | 'login', credentials: Credentials, 
   if (!res.ok) return { status: 'error', message: await errorMessage(res, fallback) }
 
   const data = (await res.json()) as { access_token: string; user: User }
-  storageSet(TOKEN_KEY, data.access_token)
-  storageSet(USER_KEY, JSON.stringify(data.user))
+  saveSession(data.access_token, data.user)
   return { status: 'ok' }
 }
 
@@ -148,10 +156,11 @@ export function logIn(credentials: Credentials): Promise<AuthResult> {
   return authenticate('login', credentials, 'Incorrect email or password.')
 }
 
-/**
- * fetch() against the API with the session token attached.
- * A 401 means the session is no longer valid, so it is cleared.
- */
+export function getAuthHeaders(): { Authorization?: string } {
+  const token = getAuthToken()
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
+
 export async function authFetch(path: string, init: RequestInit = {}): Promise<Response> {
   const headers = new Headers(init.headers)
   const token = getAuthToken()
@@ -161,7 +170,6 @@ export async function authFetch(path: string, init: RequestInit = {}): Promise<R
   return res
 }
 
-/** Confirms the session with the server and refreshes the stored user. Returns null if signed out. */
 export async function fetchCurrentUser(): Promise<User | null> {
   if (!getAuthToken()) return null
   const res = await authFetch('/auth/me')

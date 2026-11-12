@@ -101,6 +101,10 @@ export default function AuthPage({ mode }: { mode: 'signup' | 'login' }) {
         </div>
 
         <form className="auth-panel" onSubmit={onSubmit} noValidate>
+          <p className="auth-notice">
+            Enter your credentials to {mode === 'signup' ? 'create a ModelFit account' : 'sign in to ModelFit'}.
+          </p>
+
           <div className="auth-field">
             <label htmlFor={`${id}-email`}>Work email</label>
             <input
@@ -143,6 +147,7 @@ export default function AuthPage({ mode }: { mode: 'signup' | 'login' }) {
 
           <div aria-live="polite">
             {result?.status === 'error' && <p className="auth-result is-error">{result.message}</p>}
+            {result?.status === 'ok' && <p className="auth-result is-success">Success! Redirecting to workspace...</p>}
           </div>
 
           <p className="auth-switch">

@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.core.auth import get_current_active_user
 from app.core.database import get_db
-from app.schemas.auth import UserResponse
+from app.models.user import User
 from app.schemas.project import ProjectCreate, ProjectResponse, ProjectUpdate
 from app.services.ownership_service import OwnershipService
 from app.services.project_service import ProjectService
@@ -20,13 +20,11 @@ router = APIRouter()
 )
 def create_project(
     project_in: ProjectCreate,
-    current_user: UserResponse = Depends(get_current_active_user),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ) -> ProjectResponse:
     """Create and persist a new benchmarking project owned by the authenticated user."""
-    project = ProjectService.create_project(db, project_in, owner_id=current_user.id)
-    OwnershipService.record_project_owner(project.id, current_user.id)
-    return project
+    return ProjectService.create_project(db, project_in, owner_id=current_user.id)
 
 
 @router.get(
@@ -37,12 +35,11 @@ def create_project(
 def list_projects(
     skip: int = Query(0, ge=0, description="Pagination skip offset"),
     limit: int = Query(100, ge=1, le=500, description="Max projects to return"),
-    current_user: UserResponse = Depends(get_current_active_user),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ) -> List[ProjectResponse]:
     """Retrieve all benchmarking projects owned by the authenticated user."""
-    projects = ProjectService.get_projects(db, skip=skip, limit=limit)
-    return OwnershipService.filter_projects_for_user(projects, current_user.id)
+    return ProjectService.get_projects(db, user_id=current_user.id, skip=skip, limit=limit)
 
 
 @router.get(
@@ -52,7 +49,7 @@ def list_projects(
 )
 def get_project(
     project_id: str,
-    current_user: UserResponse = Depends(get_current_active_user),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ) -> ProjectResponse:
     """Retrieve details for a specific project by UUID, verifying ownership."""
@@ -67,7 +64,7 @@ def get_project(
 def update_project(
     project_id: str,
     project_in: ProjectUpdate,
-    current_user: UserResponse = Depends(get_current_active_user),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ) -> ProjectResponse:
     """Update metadata for an existing project owned by the authenticated user."""
@@ -82,7 +79,7 @@ def update_project(
 )
 def delete_project(
     project_id: str,
-    current_user: UserResponse = Depends(get_current_active_user),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ) -> None:
     """Delete a project and its associated benchmarks and test cases, verifying ownership."""

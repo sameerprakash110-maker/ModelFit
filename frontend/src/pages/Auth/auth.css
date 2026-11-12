@@ -97,6 +97,11 @@
   color: #b92d17;
 }
 
+.lp .auth-result.is-success {
+  border-color: #107c41;
+  color: #107c41;
+}
+
 .lp .auth-switch {
   margin: 0;
 }

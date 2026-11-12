@@ -7,6 +7,7 @@ from app.models.base import TimestampMixin, UUIDPrimaryKeyMixin
 if TYPE_CHECKING:
     from app.models.benchmark import Benchmark
     from app.models.test_case import TestCase
+    from app.models.user import User
 
 
 class Project(Base, UUIDPrimaryKeyMixin, TimestampMixin):
@@ -32,6 +33,10 @@ class Project(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     rubric: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True)
 
     # Relationships
+    owner: Mapped[Optional["User"]] = relationship(
+        "User",
+        back_populates="projects",
+    )
     benchmarks: Mapped[List["Benchmark"]] = relationship(
         "Benchmark",
         back_populates="project",
@@ -44,6 +49,5 @@ class Project(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         cascade="all, delete-orphan",
         order_by="TestCase.created_at.desc()",
     )
-
     def __repr__(self) -> str:
         return f"<Project(id={self.id}, name='{self.name}', domain='{self.business_domain}')>"

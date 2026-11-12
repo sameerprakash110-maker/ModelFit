@@ -1,6 +1,6 @@
 from decimal import Decimal
 from typing import TYPE_CHECKING, Optional
-from sqlalchemy import Float, ForeignKey, Integer, Numeric, String, Text
+from sqlalchemy import Boolean, Float, ForeignKey, Integer, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
 from app.models.base import TimestampMixin, UUIDPrimaryKeyMixin
@@ -27,6 +27,7 @@ class EvaluationAttempt(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     execution_cost: Mapped[Decimal] = mapped_column(
         Numeric(12, 8), nullable=False, default=Decimal("0")
     )
+    is_mock: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, index=True)
     # none | json_parse | schema | assertion | api_error | timeout
     error_type: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
     error_message: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
