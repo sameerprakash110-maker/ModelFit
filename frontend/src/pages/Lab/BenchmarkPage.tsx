@@ -117,7 +117,7 @@ export default function BenchmarkPage() {
         <ErrorNote onRetry={base.reload}>
           <p>{base.error}</p>
           <p>
-            <Link to="/app">Back to the overview</Link>
+            <Link to="/app">Back to the dashboard</Link>
           </p>
         </ErrorNote>
       </div>
@@ -134,7 +134,8 @@ export default function BenchmarkPage() {
     <div className="page">
       <Crumbs
         items={[
-          { label: 'Overview', to: '/app' },
+          { label: 'Dashboard', to: '/app' },
+          { label: 'Projects', to: '/app#projects' },
           { label: project.name, to: `/app/projects/${project.id}` },
           { label: benchmark.name },
         ]}
@@ -204,7 +205,7 @@ export default function BenchmarkPage() {
             <EmptyState
               title="This project has no test cases"
               action={
-                <Link className="btn-primary" to={`/app/projects/${project.id}`}>
+                <Link className="btn-primary" to={`/app/projects/${project.id}/analysis?open=tests&add=1`}>
                   Add test cases to {project.name}
                 </Link>
               }

@@ -96,7 +96,7 @@ export function SidebarContent({
   return (
     <div className="side">
       <div className="side-top">
-        <Link to="/app" className="side-logo" aria-label="ModelFit lab overview">
+        <Link to="/app" className="side-logo" aria-label="ModelFit lab dashboard">
           <Wordmark />
           <span className="side-tag">Lab</span>
         </Link>
@@ -126,7 +126,7 @@ export function SidebarContent({
           <li>
             <NavLink to="/app" end className="side-link">
               <LayoutGrid aria-hidden="true" />
-              Overview
+              Dashboard
             </NavLink>
           </li>
         </ul>
@@ -209,7 +209,10 @@ export function SidebarContent({
                         ))}
                         {mine.length > LATEST_PER_PROJECT && (
                           <li>
-                            <Link to={`/app/projects/${project.id}`} className="side-link side-link--quiet">
+                            <Link
+                              to={`/app/projects/${project.id}/analysis?open=benchmarks`}
+                              className="side-link side-link--quiet"
+                            >
                               All {mine.length} benchmarks
                             </Link>
                           </li>

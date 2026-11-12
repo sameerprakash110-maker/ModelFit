@@ -4,7 +4,7 @@
   nothing is invented: every number traces back to a field in the report.
   Money arrives in US dollars and leaves in rupees.
 */
-import type { Benchmark, BenchmarkReport, ModelMetrics, Project, TargetCategory } from '../services/api.ts'
+import type { Benchmark, BenchmarkReport, ModelMetrics, Project, TargetCategory, TestCase } from '../services/api.ts'
 import { formatMs, formatPercent, formatUnitRupees, usdToInr } from './format.ts'
 
 /** Projects with the most recent activity (creation or a benchmark) first. Used by the overview and the sidebar. */
@@ -12,6 +12,11 @@ export function sortProjectsByActivity(projects: Project[], benchmarks: Benchmar
   const latest = (p: Project) =>
     [p.created_at, ...benchmarks.filter((b) => b.project_id === p.id).map((b) => b.created_at)].sort().at(-1) ?? ''
   return [...projects].sort((a, b) => latest(b).localeCompare(latest(a)))
+}
+
+/** Test cases oldest first, so their numbers match everywhere they appear. */
+export function orderTestCases(testCases: TestCase[]): TestCase[] {
+  return [...testCases].sort((a, b) => a.created_at.localeCompare(b.created_at))
 }
 
 /* Eligibility thresholds. Mirrors backend/app/services/roi_service.py so the page can explain them. */
@@ -358,6 +363,50 @@ export function speedTakeaway(models: ModelView[]): string {
   const high = e.high.latencyP50 as number
   if (low <= 0 || high / low < 1.1) return `All models answered at about the same speed (${formatMs(low)} typical).`
   return `${e.low.name} is fastest, typically ${formatMs(low)}; ${e.high.name} takes ${formatMs(high)}.`
+}
+
+/** Total spend per model in the run (rupees). */
+export function spendTakeaway(models: ModelView[]): string {
+  const withCalls = models.filter((m) => m.calls > 0)
+  if (withCalls.length === 0) return 'No calls were made, so nothing was spent.'
+  const total = withCalls.reduce((sum, m) => sum + m.totalCost, 0)
+  if (total <= 0) return 'This run cost nothing measurable.'
+  const top = [...withCalls].sort((a, b) => b.totalCost - a.totalCost)[0]
+  const share = Math.round((top.totalCost / total) * 100)
+  return withCalls.length === 1
+    ? `${top.name} cost ${formatUnitRupees(top.totalCost)} for the whole run.`
+    : `The run cost ${formatUnitRupees(total)} in model calls. ${top.name} accounts for ${share}% of it (${formatUnitRupees(top.totalCost)}).`
+}
+
+/** How often calls needed a retry. retryRate is the share of calls that took more than one attempt. */
+export function retryTakeaway(models: ModelView[]): string {
+  const withCalls = models.filter((m) => m.calls > 0)
+  if (withCalls.length === 0) return 'No calls were made.'
+  const retried = withCalls.filter((m) => m.retryRate > 0)
+  if (retried.length === 0) return 'Every call answered or failed on its first attempt; no model needed a retry.'
+  const worst = [...retried].sort((a, b) => b.retryRate - a.retryRate)[0]
+  return retried.length === 1
+    ? `Only ${worst.name} needed retries: ${formatPercent(worst.retryRate)} of its calls.`
+    : `${retried.length} models needed retries. ${worst.name} retried most often: ${formatPercent(worst.retryRate)} of its calls.`
+}
+
+/**
+ * The best model on one measure, for compact summaries. Returns "All models"
+ * when every measured model ties, and null when nothing was measured.
+ */
+export function leaderOf(
+  models: ModelView[],
+  value: (m: ModelView) => number | null,
+  better: 'higher' | 'lower',
+): { name: string; value: number } | null {
+  const measured = models
+    .map((m) => ({ m, v: value(m) }))
+    .filter((x): x is { m: ModelView; v: number } => x.v !== null)
+  if (measured.length === 0) return null
+  measured.sort((a, b) => (better === 'higher' ? b.v - a.v : a.v - b.v))
+  const best = measured[0]
+  const tied = measured.length > 1 && measured.every((x) => Math.abs(x.v - best.v) < 1e-9)
+  return { name: tied ? 'All models' : best.m.name, value: best.v }
 }
 
 export function reliabilityTakeaway(models: ModelView[]): string {

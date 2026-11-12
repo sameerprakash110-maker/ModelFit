@@ -5,22 +5,34 @@ import { api } from '../../services/api.ts'
 import type { Project } from '../../services/api.ts'
 import { ErrorNote } from './ui.tsx'
 
-/** Create a project: a name and the system prompt the workload uses. Everything else is optional. */
+/**
+ * Create a project, or edit one when `project` is given: a name and the system
+ * prompt the workload uses. Domain and description are optional.
+ */
 export function ProjectForm({
+  project,
   onCreated,
+  onSaved,
   onCancel,
-  submitLabel = 'Create project',
+  submitLabel,
+  promptNote,
 }: {
-  onCreated: (project: Project) => void
+  /** The project to edit. Leave out to create a new one. */
+  project?: Project
+  onCreated?: (project: Project) => void
+  onSaved?: (project: Project) => void
   onCancel?: () => void
   submitLabel?: string
+  /** Shown under the system prompt, e.g. how a change affects earlier runs. */
+  promptNote?: string
 }) {
   const id = useId()
   const describeError = useActionError()
-  const [name, setName] = useState('')
-  const [systemPrompt, setSystemPrompt] = useState('')
-  const [domain, setDomain] = useState('')
-  const [description, setDescription] = useState('')
+  const editing = Boolean(project)
+  const [name, setName] = useState(project?.name ?? '')
+  const [systemPrompt, setSystemPrompt] = useState(project?.system_prompt ?? '')
+  const [domain, setDomain] = useState(project?.business_domain ?? '')
+  const [description, setDescription] = useState(project?.description ?? '')
   const [errors, setErrors] = useState<{ name?: string; systemPrompt?: string }>({})
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
@@ -33,22 +45,46 @@ export function ProjectForm({
     setErrors(next)
     if (next.name || next.systemPrompt) return
 
+    const fields = {
+      name: name.trim(),
+      system_prompt: systemPrompt.trim(),
+      business_domain: domain.trim() || null,
+      description: description.trim() || null,
+    }
     setSaving(true)
     setSubmitError(null)
     try {
-      onCreated(
-        await api.createProject({
-          name: name.trim(),
-          system_prompt: systemPrompt.trim(),
-          business_domain: domain.trim() || null,
-          description: description.trim() || null,
-        }),
-      )
+      if (project) onSaved?.(await api.updateProject(project.id, fields))
+      else onCreated?.(await api.createProject(fields))
     } catch (err) {
       setSubmitError(describeError(err))
       setSaving(false)
     }
   }
+
+  const optionalFields = (
+    <div className="form-row">
+      <div className="field">
+        <label htmlFor={`${id}-domain`}>Business domain</label>
+        <input
+          id={`${id}-domain`}
+          value={domain}
+          onChange={(e) => setDomain(e.target.value)}
+          placeholder="Customer support"
+          maxLength={100}
+        />
+      </div>
+      <div className="field">
+        <label htmlFor={`${id}-desc`}>Description</label>
+        <input
+          id={`${id}-desc`}
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Routes incoming tickets to the right team"
+        />
+      </div>
+    </div>
+  )
 
   return (
     <form className="form" onSubmit={onSubmit} noValidate>
@@ -60,6 +96,7 @@ export function ProjectForm({
           onChange={(e) => setName(e.target.value)}
           placeholder="Support ticket triage"
           maxLength={255}
+          data-autofocus
           aria-invalid={errors.name ? true : undefined}
           aria-describedby={errors.name ? `${id}-name-err` : undefined}
         />
@@ -69,11 +106,12 @@ export function ProjectForm({
           </p>
         )}
       </div>
+      {editing && optionalFields}
       <div className="field">
         <label htmlFor={`${id}-prompt`}>System prompt</label>
         <textarea
           id={`${id}-prompt`}
-          rows={4}
+          rows={editing ? 7 : 4}
           value={systemPrompt}
           onChange={(e) => setSystemPrompt(e.target.value)}
           placeholder="You are a support assistant. Classify each ticket as billing, technical or account, mark it urgent or normal, and reply in two sentences."
@@ -86,38 +124,21 @@ export function ProjectForm({
           </p>
         ) : (
           <p id={`${id}-prompt-hint`} className="hint">
-            The instructions your app sends with every request. Every model in a benchmark gets this same prompt.
+            {promptNote ??
+              'The instructions your app sends with every request. Every model in a benchmark gets this same prompt.'}
           </p>
         )}
       </div>
-      <details className="advanced">
-        <summary>Add a domain and description (optional)</summary>
-        <div className="form-row">
-          <div className="field">
-            <label htmlFor={`${id}-domain`}>Business domain</label>
-            <input
-              id={`${id}-domain`}
-              value={domain}
-              onChange={(e) => setDomain(e.target.value)}
-              placeholder="Customer support"
-              maxLength={100}
-            />
-          </div>
-          <div className="field">
-            <label htmlFor={`${id}-desc`}>Description</label>
-            <input
-              id={`${id}-desc`}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Routes incoming tickets to the right team"
-            />
-          </div>
-        </div>
-      </details>
+      {!editing && (
+        <details className="advanced">
+          <summary>Add a domain and description (optional)</summary>
+          {optionalFields}
+        </details>
+      )}
       {submitError && <ErrorNote>{submitError}</ErrorNote>}
       <div className="actions">
         <button type="submit" className="btn-primary" disabled={saving}>
-          {saving ? 'Creating…' : submitLabel}
+          {saving ? (editing ? 'Saving…' : 'Creating…') : (submitLabel ?? (editing ? 'Save changes' : 'Create project'))}
         </button>
         {onCancel && (
           <button type="button" className="btn-text" onClick={onCancel}>

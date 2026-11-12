@@ -84,7 +84,7 @@ export default function NewBenchmark() {
 
   return (
     <div className="page page--narrow">
-      <Crumbs items={[{ label: 'Overview', to: '/app' }, { label: 'New benchmark' }]} />
+      <Crumbs items={[{ label: 'Dashboard', to: '/app' }, { label: 'New benchmark' }]} />
       <header className="page-head">
         <h1 className="page-title">New benchmark</h1>
         <p className="page-lede">

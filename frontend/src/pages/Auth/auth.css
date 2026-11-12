@@ -23,25 +23,28 @@
   grid-template-columns: minmax(0, 1fr);
   gap: 1.5rem;
   padding: 2.5rem clamp(1.4rem, 4vw, 2.5rem);
-  border-radius: 2px;
+  border: 1px solid rgb(13 18 56 / 0.1);
+  border-radius: 14px;
   background: #fff;
   color: var(--color-ink);
-  box-shadow: 0 7px 0 rgb(13 18 56 / 0.25);
+  box-shadow: 0 24px 48px -32px rgb(13 18 56 / 0.45);
 }
 
 .lp .auth-panel::after {
   content: '';
   position: absolute;
   inset: 8px;
-  border: 1.5px dashed var(--color-ink);
+  border: 1.5px dashed rgb(13 18 56 / 0.2);
+  border-radius: 9px;
   pointer-events: none;
 }
 
 .lp .auth-notice {
   margin: 0;
   padding: 0.75rem 0.9rem;
+  border-radius: 8px;
   background: var(--color-paper);
-  border: 1.5px dashed var(--color-ink);
+  border: 1px solid rgb(13 18 56 / 0.08);
   font-size: 0.98rem;
   line-height: 1.45;
 }

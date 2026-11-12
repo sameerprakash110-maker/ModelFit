@@ -169,7 +169,7 @@ export default function LabLayout() {
             <Menu aria-hidden="true" />
           </button>
         )}
-        <Link to="/app" className="mobilebar-logo" aria-label="ModelFit lab overview">
+        <Link to="/app" className="mobilebar-logo" aria-label="ModelFit lab dashboard">
           <Wordmark />
           <span className="side-tag">Lab</span>
         </Link>

@@ -8,8 +8,8 @@
     grey        every other model
     tape yellow primary actions, the measuring tape
     red         failures only
-  Anybody (variable width) sets page titles and the verdict word; everything
-  else, including every number, is Schibsted Grotesk.
+  Onest sets everything: page titles and the verdict word at heavier weights
+  and tighter spacing, body text and every number at regular weights.
 */
 
 .lp.lab {
@@ -32,6 +32,8 @@
   --good: #17703f;
   --focus: var(--chalk);
   --radius: 6px;
+  /* Where pinned bars stop: under the phone top bar, or at the very top on wide screens. */
+  --sticky-top: 3.5rem;
 
   min-height: 100vh;
   background: var(--paper);
@@ -653,6 +655,11 @@
     grid-template-columns: 0 minmax(0, 1fr);
   }
 
+  /* The slim bar here scrolls away with the page, so pinned bars go to the very top. */
+  .lp.lab {
+    --sticky-top: 0px;
+  }
+
   .lab .sidebar {
     grid-area: side;
     transition: visibility 0s;
@@ -778,13 +785,28 @@
 .lab .page-title {
   margin: 0;
   font-family: var(--font-display);
-  font-weight: 800;
-  font-variation-settings: 'wdth' 112;
+  font-weight: 650;
   font-size: clamp(1.9rem, 3.6vw, 2.75rem);
-  line-height: 1.02;
-  letter-spacing: -0.01em;
+  line-height: 1.05;
+  letter-spacing: -0.035em;
   overflow-wrap: anywhere;
   text-wrap: balance;
+}
+
+/* Onest reads best a little tighter at display sizes. */
+.lab .section-title,
+.lab .health-title,
+.lab .block-title,
+.lab .group-title,
+.lab .modal-title,
+.lab .chart-title,
+.lab .bestfit-headline {
+  letter-spacing: -0.02em;
+}
+
+.lab .bestfit-word,
+.lab .rec-word {
+  letter-spacing: -0.045em;
 }
 
 .lab .page-lede {
@@ -856,8 +878,7 @@
 .lab .section-title {
   margin: 0;
   font-family: var(--font-display);
-  font-weight: 750;
-  font-variation-settings: 'wdth' 100;
+  font-weight: 650;
   font-size: 1.375rem;
   line-height: 1.15;
 }
@@ -1560,8 +1581,7 @@
 .lab .wiz-title {
   margin: 0;
   font-family: var(--font-display);
-  font-weight: 750;
-  font-variation-settings: 'wdth' 100;
+  font-weight: 650;
   font-size: 1.25rem;
 }
 
@@ -2022,8 +2042,7 @@
 .lab .bestfit-word {
   margin: 0;
   font-family: var(--font-display);
-  font-weight: 800;
-  font-variation-settings: 'wdth' 150;
+  font-weight: 650;
   font-size: clamp(2.2rem, 5.5vw, 3.6rem);
   line-height: 0.95;
   color: var(--chalk);
@@ -2035,7 +2054,6 @@
 
 .lab .bestfit--inconclusive .bestfit-word {
   color: var(--ink-soft);
-  font-variation-settings: 'wdth' 110;
   font-size: clamp(1.8rem, 4vw, 2.6rem);
 }
 
@@ -2452,15 +2470,14 @@
   font-weight: 650;
 }
 
-/* The word is set extra-wide: the page's one loud element. */
+/* The word is set large: the page's one loud element. */
 .lab .verdict-word {
   margin: 0;
   font-family: var(--font-display);
-  font-weight: 800;
-  font-variation-settings: 'wdth' 150;
+  font-weight: 650;
   font-size: clamp(3rem, 9vw, 6rem);
-  line-height: 0.9;
-  letter-spacing: -0.01em;
+  line-height: 0.95;
+  letter-spacing: -0.05em;
   color: var(--chalk);
 }
 
@@ -2470,7 +2487,6 @@
 
 .lab .verdict--inconclusive .verdict-word {
   color: var(--ink-soft);
-  font-variation-settings: 'wdth' 112;
   font-size: clamp(2.2rem, 5.5vw, 3.6rem);
 }
 
@@ -3475,31 +3491,7 @@
   font-size: 0.9375rem;
 }
 
-/* ---------- project page ---------- */
-
-.lab .prompt-box {
-  border: 1px solid var(--rule);
-  border-radius: var(--radius);
-  background: var(--surface);
-}
-
-.lab .prompt-box > summary {
-  padding: 0.75rem 1rem;
-  font-weight: 650;
-  cursor: pointer;
-}
-
-.lab .prompt-box pre {
-  margin: 0 1rem 1rem;
-  padding: 0.9rem 1rem;
-  border-radius: 4px;
-  background: var(--paper);
-  font-family: inherit;
-  font-size: 0.9375rem;
-  line-height: 1.55;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-}
+/* ---------- test cases (new-benchmark wizard) ---------- */
 
 .lab .tc-list {
   display: grid;
@@ -3560,10 +3552,6 @@
   font-size: 0.875rem;
 }
 
-.lab .danger-zone .btn-text--danger {
-  justify-self: start;
-}
-
 .lab .confirm {
   display: grid;
   gap: 0.8rem;
@@ -3577,6 +3565,1486 @@
   margin: 0;
 }
 
+/* ---------- project: header and tabs ---------- */
+
+.lab .crumbs + .proj-head {
+  margin-top: -0.75rem;
+}
+
+.lab .proj-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 1rem 2rem;
+}
+
+.lab .proj-id {
+  display: grid;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.lab .proj-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.5rem;
+  margin: 0.1rem 0 0;
+  font-size: 0.875rem;
+}
+
+.lab .proj-meta div {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.lab .proj-meta dt {
+  color: var(--muted);
+}
+
+.lab .proj-meta dd {
+  margin: 0;
+  font-weight: 650;
+}
+
+/* A plain block, so the tab bar inside can stay pinned for the whole page. */
+.lab .proj-body {
+  min-width: 0;
+}
+
+.lab .proj-sentinel {
+  height: 0;
+}
+
+.lab .proj-tabs {
+  position: sticky;
+  top: var(--sticky-top);
+  z-index: 20;
+  display: flex;
+  align-items: stretch;
+  gap: 1.75rem;
+  min-width: 0;
+  background: var(--paper);
+  border-bottom: 1px solid var(--rule-strong);
+}
+
+.lab .proj-tabs.is-stuck {
+  box-shadow: 0 10px 14px -14px rgb(13 18 56 / 0.5);
+}
+
+/* Once the header has scrolled away, the bar carries the project name. */
+.lab .proj-tabs-name {
+  display: none;
+  flex: 0 1 auto;
+  align-self: center;
+  min-width: 0;
+  max-width: 18rem;
+  margin-right: -0.5rem;
+  padding-right: 1.25rem;
+  border-right: 1px solid var(--rule);
+  overflow: hidden;
+  font-family: var(--font-display);
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lab .proj-tabs.is-stuck .proj-tabs-name {
+  display: block;
+}
+
+.lab .proj-tab {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  min-height: 3rem;
+  color: var(--ink-soft);
+  font-weight: 650;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.lab .proj-tab:hover {
+  color: var(--ink);
+}
+
+.lab .proj-tab[aria-current='page'] {
+  color: var(--ink);
+}
+
+.lab .proj-tab[aria-current='page']::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  height: 3px;
+  border-radius: 2px 2px 0 0;
+  background: var(--chalk);
+}
+
+.lab .proj-view {
+  display: grid;
+  margin-top: 1.75rem;
+}
+
+@media (min-width: 48rem) {
+  .lab .proj-head {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+}
+
+@media (max-width: 26rem) {
+  .lab .proj-tabs {
+    gap: 1.25rem;
+  }
+
+  .lab .proj-tabs.is-stuck .proj-tabs-name {
+    display: none;
+  }
+}
+
+/* ---------- project: overview tab ---------- */
+
+.lab .ov {
+  display: grid;
+  gap: 1.75rem;
+  min-width: 0;
+}
+
+/* Project status: the one thing to read first. A band on the left carries the state. */
+.lab .health {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 1rem 1.1rem;
+  padding: 1.25rem 1.4rem 1.25rem 1.6rem;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.lab .health::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 5px;
+  background: var(--rule-strong);
+}
+
+.lab .health--results::before {
+  background: var(--good);
+}
+
+.lab .health--running::before {
+  background: var(--tape);
+}
+
+.lab .health--failed::before {
+  background: var(--bad);
+}
+
+.lab .health-icon {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 50%;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.lab .health-icon svg {
+  width: 1.35rem;
+  height: 1.35rem;
+}
+
+.lab .health--results .health-icon {
+  background: #e6f3ec;
+  color: var(--good);
+}
+
+.lab .health--running .health-icon {
+  background: var(--tape-wash);
+}
+
+.lab .health--failed .health-icon {
+  background: var(--bad-wash);
+  color: var(--bad-text);
+}
+
+.lab .health-text {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.lab .health-label {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 0.8125rem;
+}
+
+.lab .health-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 650;
+  font-size: clamp(1.4rem, 2.6vw, 1.85rem);
+  line-height: 1.1;
+}
+
+.lab .health-detail {
+  margin: 0;
+  max-width: 44em;
+  color: var(--ink-soft);
+  overflow-wrap: anywhere;
+}
+
+.lab .health-verdict {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.6rem;
+  margin: 0.5rem 0 0;
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+
+.lab .health-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1.25rem;
+}
+
+/* The verdict as a small stamp: blue to act, ink to stay, outline when there is no verdict. */
+.lab .vchip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.12rem 0.55rem;
+  border-radius: 3px;
+  background: var(--chalk);
+  color: #fff;
+  font-family: var(--font-display);
+  font-weight: 650;
+  font-size: 0.875rem;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+.lab .vchip--stay {
+  background: var(--ink);
+}
+
+.lab .vchip--inconclusive {
+  background: transparent;
+  color: var(--ink-soft);
+  box-shadow: inset 0 0 0 1.5px var(--rule-strong);
+}
+
+/* Five numbers in one strip; hairlines between cells come from the gap. */
+.lab .stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  margin: 0;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--rule);
+  overflow: hidden;
+}
+
+.lab .stats div {
+  display: flex;
+  flex-direction: column-reverse;
+  justify-content: flex-end;
+  gap: 0.2rem;
+  min-width: 0;
+  padding: 0.85rem 1.1rem;
+  background: var(--surface);
+}
+
+.lab .stats div:last-child {
+  grid-column: 1 / -1;
+}
+
+.lab .stats dt {
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 0.8125rem;
+}
+
+.lab .stats dd {
+  margin: 0;
+  font-weight: 650;
+  font-size: 1.6rem;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+}
+
+.lab .stats .stats-status {
+  display: flex;
+  align-items: center;
+  min-height: 1.85rem;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.lab .ov-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 1.75rem 2.5rem;
+}
+
+.lab .ov-block {
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.lab .block-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+}
+
+.lab .block-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 650;
+  font-size: 1.1875rem;
+  line-height: 1.2;
+}
+
+.lab .block-link {
+  font-weight: 650;
+  font-size: 0.9375rem;
+}
+
+.lab .activity,
+.lab .quick {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.lab .activity-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    'main main main'
+    'status date link';
+  align-items: center;
+  gap: 0.45rem 0.75rem;
+  padding: 0.8rem 1rem;
+}
+
+.lab .activity-row + .activity-row,
+.lab .quick li + li {
+  border-top: 1px solid var(--rule);
+}
+
+.lab .activity-row:hover {
+  background: #fafbfd;
+}
+
+.lab .activity-main {
+  grid-area: main;
+  display: grid;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.lab .activity-name {
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.lab .activity-models {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.875rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lab .activity-row .chip {
+  grid-area: status;
+  justify-self: start;
+}
+
+.lab .activity-date {
+  grid-area: date;
+  color: var(--muted);
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+
+.lab .activity-link {
+  grid-area: link;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  font-weight: 650;
+  font-size: 0.9375rem;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.lab .activity-link svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* The link covers the row, so anywhere on it opens the run. */
+.lab .activity-link::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+
+.lab .activity-row:hover .activity-link {
+  text-decoration: underline;
+}
+
+.lab .activity-link:focus-visible {
+  outline: none;
+}
+
+.lab .activity-link:focus-visible::after {
+  outline: 3px solid var(--focus);
+  outline-offset: -3px;
+}
+
+.lab .quick-link {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0.8rem 1rem;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.lab .quick-link:hover {
+  background: #fafbfd;
+}
+
+.lab .quick-link:hover .quick-title {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.lab .quick-link:focus-visible {
+  outline-offset: -3px;
+}
+
+.lab button.quick-link:disabled {
+  opacity: 1;
+  cursor: default;
+}
+
+.lab button.quick-link:disabled:hover {
+  background: none;
+}
+
+.lab button.quick-link:disabled .quick-title {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.lab button.quick-link:disabled .quick-icon {
+  background: var(--paper);
+  color: var(--muted);
+}
+
+.lab .quick-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 4px;
+  background: var(--chalk-wash);
+  color: var(--chalk);
+}
+
+.lab .quick-icon svg {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.lab .quick-text {
+  display: grid;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.lab .quick-title {
+  font-weight: 700;
+}
+
+.lab .quick-detail {
+  color: var(--muted);
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.lab .run-blocked {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.9rem;
+}
+
+.lab .run-blocked .btn-text {
+  padding: 0;
+  font-size: inherit;
+}
+
+.lab .notice {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.7rem 1rem;
+  border-radius: var(--radius);
+  background: #e6f3ec;
+  color: var(--good);
+  font-weight: 650;
+}
+
+.lab .notice svg {
+  flex: none;
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+@media (min-width: 40rem) {
+  .lab .stats {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .lab .stats div:last-child {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 43.99rem) {
+  .lab .activity-link-text {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .lab .activity-link {
+    justify-self: end;
+  }
+
+  .lab .activity-link svg {
+    width: 1.15rem;
+    height: 1.15rem;
+  }
+}
+
+@media (min-width: 44rem) {
+  .lab .activity-row {
+    grid-template-columns: minmax(0, 1fr) auto 8.5rem auto;
+    grid-template-areas: 'main status date link';
+  }
+}
+
+@media (min-width: 48rem) {
+  .lab .health {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+  }
+
+  .lab .health-actions {
+    grid-column: auto;
+    justify-content: flex-end;
+  }
+}
+
+@media (min-width: 60rem) {
+  .lab .ov-grid {
+    grid-template-columns: minmax(0, 1fr) 18rem;
+  }
+}
+
+/* ---------- project: detailed analysis tab ---------- */
+
+.lab .an {
+  display: grid;
+  gap: 2.25rem;
+  min-width: 0;
+}
+
+.lab .an-intro {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin-bottom: -0.75rem;
+}
+
+.lab .an-lede {
+  margin: 0;
+  color: var(--ink-soft);
+}
+
+.lab .an-group {
+  display: grid;
+  min-width: 0;
+}
+
+.lab .group-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1.25rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 2px solid var(--ink);
+}
+
+.lab .group-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 650;
+  font-size: 1.25rem;
+  line-height: 1.2;
+}
+
+.lab .group-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1.25rem;
+  min-width: 0;
+}
+
+.lab .group-tools select {
+  max-width: min(24rem, 72vw);
+}
+
+.lab .group-note {
+  margin: 0;
+  color: var(--ink-soft);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.lab .an-group > .empty,
+.lab .an-group > .note {
+  margin-top: 1rem;
+}
+
+/* New results on the way: the current ones stay readable but step back. */
+.lab .an-group .acc-panel,
+.lab .an-group .acc-summary {
+  transition: opacity 150ms ease;
+}
+
+.lab .an-group.is-refreshing .acc-panel,
+.lab .an-group.is-refreshing .acc-summary {
+  opacity: 0.5;
+}
+
+/* One section: a full-width heading button over content that only exists once opened. */
+.lab .acc {
+  border-bottom: 1px solid var(--rule);
+}
+
+/* Land opened or linked sections below both pinned bars. Outranks the site-wide section[id] rule. */
+.lab .an .acc {
+  scroll-margin-top: calc(var(--sticky-top) + 3.75rem);
+}
+
+.lab .acc-heading {
+  margin: 0;
+  font: inherit;
+}
+
+.lab .acc-button {
+  display: grid;
+  grid-template-columns: 1.25rem minmax(0, 1fr) auto;
+  grid-template-areas:
+    'chev title badge'
+    '. summary summary';
+  align-items: center;
+  gap: 0.15rem 0.6rem;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 3.5rem;
+  padding: 0.8rem 0.25rem;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.lab .acc-chevron {
+  grid-area: chev;
+  width: 1.15rem;
+  height: 1.15rem;
+  color: var(--muted);
+  transition: transform 160ms ease;
+}
+
+.lab .acc.is-open .acc-chevron {
+  transform: rotate(90deg);
+  color: var(--ink);
+}
+
+.lab .acc-title {
+  grid-area: title;
+  font-weight: 650;
+  font-size: 1.0625rem;
+}
+
+.lab .acc-button:hover .acc-title {
+  text-decoration: underline;
+  text-decoration-color: var(--rule-strong);
+  text-underline-offset: 4px;
+}
+
+.lab .acc-summary {
+  grid-area: summary;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.9375rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lab .acc-badge {
+  grid-area: badge;
+  display: inline-flex;
+  justify-self: end;
+}
+
+.lab .acc-panel {
+  padding: 0 0 1.75rem 1.85rem;
+}
+
+.lab .acc.is-open > .acc-panel {
+  animation: fold-in 180ms ease-out;
+}
+
+@keyframes fold-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+.lab .acc-body {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.lab .acc-body > .more {
+  justify-self: start;
+}
+
+/* A fold inside a section: a metric group, one record, or supporting evidence. */
+.lab .fold {
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.lab .folds {
+  display: grid;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.lab .folds > .fold {
+  border: 0;
+  border-radius: 0;
+  background: none;
+}
+
+.lab .folds > .fold + .fold {
+  border-top: 1px solid var(--rule);
+}
+
+.lab .fold-button {
+  display: grid;
+  grid-template-columns: 1rem minmax(0, 1fr);
+  grid-template-areas:
+    'chev title'
+    '. summary';
+  align-items: center;
+  gap: 0.1rem 0.55rem;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 3rem;
+  padding: 0.7rem 0.9rem;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.lab .fold-button:hover {
+  background: #fafbfd;
+}
+
+.lab .fold-button:focus-visible {
+  outline-offset: -3px;
+}
+
+.lab .fold-chevron {
+  grid-area: chev;
+  width: 1rem;
+  height: 1rem;
+  color: var(--muted);
+  transition: transform 160ms ease;
+}
+
+.lab .fold.is-open > .fold-button .fold-chevron {
+  transform: rotate(90deg);
+  color: var(--ink);
+}
+
+.lab .fold-title {
+  grid-area: title;
+  font-weight: 700;
+}
+
+.lab .fold-summary {
+  grid-area: summary;
+  min-width: 0;
+  color: var(--muted);
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
+}
+
+.lab .fold-panel {
+  padding: 0.15rem 0.9rem 1.1rem 2.45rem;
+}
+
+.lab .fold.is-open > .fold-panel {
+  animation: fold-in 180ms ease-out;
+}
+
+.lab .fold-body {
+  display: grid;
+  gap: 0.85rem;
+  min-width: 0;
+  margin: 0;
+}
+
+.lab .measure-desc {
+  margin: 0;
+  max-width: 46em;
+  color: var(--ink-soft);
+  font-size: 0.9375rem;
+}
+
+.lab .measure-takeaway {
+  margin: 0;
+  padding-top: 0.6rem;
+  border-top: 1px dashed var(--rule-strong);
+  font-weight: 650;
+}
+
+/* Compact summary: who leads on each measure. */
+.lab .leaders {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  margin: 0;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--rule);
+  overflow: hidden;
+}
+
+.lab .leaders div {
+  display: grid;
+  align-content: start;
+  gap: 0.15rem;
+  min-width: 0;
+  padding: 0.8rem 1rem;
+  background: var(--surface);
+}
+
+.lab .leaders dt {
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 0.8125rem;
+}
+
+.lab .leaders dd {
+  display: grid;
+  min-width: 0;
+  margin: 0;
+}
+
+.lab .leader-name {
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.lab .leader-value {
+  color: var(--ink-soft);
+  font-size: 0.9375rem;
+}
+
+/* Toolbars: filters on the left, the section's own action on the right. */
+.lab .toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 1.25rem;
+}
+
+.lab .toolbar-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.lab .toolbar-end {
+  margin-left: auto;
+}
+
+.lab .search {
+  position: relative;
+  flex: 1 1 14rem;
+  max-width: 22rem;
+}
+
+.lab .search svg {
+  position: absolute;
+  top: 50%;
+  left: 0.65rem;
+  width: 1rem;
+  height: 1rem;
+  color: var(--muted);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.lab .search input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 2.5rem;
+  padding: 0.45rem 0.7rem 0.45rem 2.1rem;
+  border: 1.5px solid var(--rule-strong);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+}
+
+.lab .tcx {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+
+/* Compact rows that open in place: test cases, runs, evaluations. */
+.lab .entries {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.lab .entry {
+  min-width: 0;
+}
+
+.lab .entry + .entry {
+  border-top: 1px solid var(--rule);
+}
+
+.lab .entry-toggle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.85rem;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 3rem;
+  padding: 0.7rem 0.9rem;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.lab .entry-toggle:hover,
+.lab .entry.is-open > .entry-toggle {
+  background: #fafbfd;
+}
+
+.lab .entry-toggle:focus-visible {
+  outline-offset: -3px;
+}
+
+.lab .entry-num {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  background: var(--paper);
+  color: var(--ink-soft);
+  font-weight: 700;
+  font-size: 0.8125rem;
+}
+
+.lab .entry-main {
+  display: grid;
+  flex: 1 1 12rem;
+  gap: 0.05rem;
+  min-width: 0;
+}
+
+.lab .entry-title {
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+
+.lab .entry-title--clamp {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.lab .entry-sub {
+  color: var(--ink-soft);
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
+}
+
+.lab .entry-meta {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+}
+
+.lab .entry-date {
+  color: var(--muted);
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+
+.lab .entry-chevron {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+  margin-left: auto;
+  color: var(--muted);
+  transition: transform 160ms ease;
+}
+
+.lab .entry.is-open > .entry-toggle .entry-chevron {
+  transform: rotate(90deg);
+  color: var(--ink);
+}
+
+.lab .entry-detail:not([hidden]) {
+  display: grid;
+  gap: 1rem;
+  padding: 0.5rem 0.9rem 1.1rem;
+  border-top: 1px dashed var(--rule);
+  animation: fold-in 180ms ease-out;
+}
+
+/* Label and value pairs. Stacked on phones; label beside value on wider screens. */
+.lab .kv {
+  display: grid;
+  gap: 0.9rem;
+  margin: 0;
+}
+
+.lab .kv > div {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.lab .kv dt {
+  color: var(--muted);
+  font-weight: 650;
+  font-size: 0.875rem;
+}
+
+.lab .kv dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.lab .kv dd > .hint,
+.lab .kv dd > .fold {
+  margin-top: 0.35rem;
+}
+
+.lab .kv-text {
+  white-space: pre-wrap;
+}
+
+.lab .kv--grid {
+  grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr));
+  gap: 0.9rem 1.5rem;
+}
+
+.lab .kv--grid .kv-wide {
+  grid-column: 1 / -1;
+}
+
+.lab .code-block {
+  max-height: 20rem;
+  margin: 0;
+  padding: 0.8rem 0.9rem;
+  border-radius: 4px;
+  background: var(--paper);
+  overflow: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.lab .code-block--prose {
+  font-family: inherit;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+
+.lab .name-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lab .name-list li {
+  padding: 0.15rem 0.55rem;
+  border-radius: 3px;
+  background: var(--paper);
+  font-size: 0.9375rem;
+  overflow-wrap: anywhere;
+}
+
+.lab .response {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.lab .response-label {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 650;
+  font-size: 0.875rem;
+}
+
+/* The recommendation: the word, then the reasons, trade-offs and next step side by side. */
+.lab .rec {
+  display: grid;
+  gap: 0.35rem;
+  padding: 1.1rem 1.25rem 1.2rem 1.4rem;
+  border: 1px solid var(--rule);
+  border-left: 5px solid var(--chalk);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.lab .rec--stay {
+  border-left-color: var(--ink);
+}
+
+.lab .rec--inconclusive {
+  border-left-color: var(--rule-strong);
+}
+
+.lab .rec-word {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.75rem;
+  margin: 0;
+  color: var(--chalk);
+  font-family: var(--font-display);
+  font-weight: 650;
+  font-size: clamp(2rem, 5vw, 3rem);
+  line-height: 1;
+}
+
+.lab .rec--stay .rec-word {
+  color: var(--ink);
+}
+
+.lab .rec--inconclusive .rec-word {
+  color: var(--ink-soft);
+  font-size: clamp(1.6rem, 3.6vw, 2.2rem);
+}
+
+.lab .rec-word .chip {
+  font-family: var(--font-body);
+}
+
+.lab .rec-headline {
+  margin: 0.3rem 0 0;
+  max-width: 40em;
+  font-weight: 700;
+  font-size: 1.125rem;
+  overflow-wrap: anywhere;
+}
+
+.lab .rec-because {
+  margin: 0;
+  max-width: 46em;
+  color: var(--ink-soft);
+}
+
+.lab .rec-cols {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.25rem 2rem;
+}
+
+.lab .rec-col {
+  display: grid;
+  align-content: start;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.lab .rec-col-title {
+  margin: 0;
+  font-weight: 650;
+  font-size: 0.9375rem;
+}
+
+.lab .rec-list {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+  padding-left: 1.1rem;
+  list-style: disc;
+  color: var(--ink-soft);
+  overflow-wrap: anywhere;
+}
+
+.lab .rec-list li::marker {
+  color: var(--muted);
+}
+
+.lab .rec-text {
+  margin: 0;
+  color: var(--ink-soft);
+  overflow-wrap: anywhere;
+}
+
+@media (min-width: 48rem) {
+  .lab .acc-button {
+    grid-template-columns: 1.25rem auto minmax(0, 1fr) auto;
+    grid-template-areas: 'chev title summary badge';
+    column-gap: 0.75rem;
+  }
+
+  .lab .fold-button {
+    grid-template-columns: 1rem auto minmax(0, 1fr);
+    grid-template-areas: 'chev title summary';
+    column-gap: 0.75rem;
+  }
+
+  .lab .fold-summary {
+    text-align: right;
+  }
+
+  .lab .entry-title--clamp {
+    -webkit-line-clamp: 1;
+  }
+
+  .lab .kv:not(.kv--grid) > div {
+    grid-template-columns: 11rem minmax(0, 1fr);
+    gap: 1.25rem;
+  }
+}
+
+@media (min-width: 56rem) {
+  .lab .leaders {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .lab .rec-cols {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 30rem) {
+  .lab .acc-panel {
+    padding-left: 0;
+  }
+
+  .lab .fold-panel {
+    padding-left: 0.9rem;
+  }
+}
+
+/* ---------- dialogs and confirmations ---------- */
+
+.lab .modal {
+  box-sizing: border-box;
+  width: min(40rem, calc(100vw - 2rem));
+  max-height: calc(100dvh - 2rem);
+  /* Centred in the viewport. Tailwind's reset zeroes the margin the browser centres dialogs with. */
+  margin: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 24px 60px -20px rgb(13 18 56 / 0.5);
+}
+
+.lab .modal--danger {
+  border-top: 4px solid var(--bad);
+}
+
+.lab .modal::backdrop {
+  background: rgb(13 18 56 / 0.55);
+}
+
+.lab .modal[open] {
+  animation: modal-in 160ms ease-out;
+}
+
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+.lab .modal-panel {
+  display: grid;
+  gap: 1rem;
+  padding: 1.25rem 1.4rem 1.4rem;
+}
+
+.lab .modal-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.lab .modal-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 650;
+  font-size: 1.375rem;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.lab .modal-close {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 2.25rem;
+  height: 2.25rem;
+  margin: -0.35rem -0.5rem 0 0;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.lab .modal-close:hover {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.lab .modal-close svg {
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+.lab .modal-desc {
+  color: var(--ink-soft);
+}
+
+.lab .modal-desc p {
+  margin: 0;
+}
+
+/* Short confirmations after a change, bottom centre, gone after a few seconds. */
+.lab .toast-region {
+  position: fixed;
+  bottom: 1.25rem;
+  left: 50%;
+  z-index: 60;
+  max-width: calc(100vw - 2rem);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.lab .toast {
+  margin: 0;
+  padding: 0.7rem 1.1rem;
+  border-radius: 6px;
+  background: var(--ink);
+  color: #fff;
+  font-weight: 650;
+  box-shadow: 0 12px 30px -12px rgb(13 18 56 / 0.6);
+  animation: modal-in 200ms ease-out;
+}
+
 /* ---------- motion ---------- */
 
 @media (prefers-reduced-motion: reduce) {
@@ -3584,8 +5052,19 @@
   .lab .tape-other,
   .lab .bar-fill,
   .lab .progress-bar span,
-  .lab .progress-mini span {
+  .lab .progress-mini span,
+  .lab .acc-chevron,
+  .lab .fold-chevron,
+  .lab .entry-chevron {
     transition: none;
+  }
+
+  .lab .acc.is-open > .acc-panel,
+  .lab .fold.is-open > .fold-panel,
+  .lab .entry-detail:not([hidden]),
+  .lab .modal[open],
+  .lab .toast {
+    animation: none;
   }
 
   .lab .spin {

@@ -1,5 +1,6 @@
 import { ArrowUpRight, Check, KeyRound, Plus } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { EmptyState, ErrorNote, Loading, SimulatedTag, StatusChip } from '../../components/lab/ui.tsx'
 import { useResource } from '../../hooks/useResource.ts'
 import { api } from '../../services/api.ts'
@@ -39,6 +40,20 @@ export default function Overview() {
   const { data, error, loading, reload } = useResource(loadOverview, [])
   const user = getStoredUser()
   const firstName = user?.full_name?.split(' ')[0]
+  const { hash, pathname, state } = useLocation()
+  const navigate = useNavigate()
+  // A message handed over by the page that sent us here, such as "Deleted “Support triage”."
+  // Kept locally and cleared from history, so a reload doesn't show it again.
+  const [notice] = useState(() => (state as { notice?: string } | null)?.notice)
+  useEffect(() => {
+    if (notice) navigate({ pathname, hash }, { replace: true, state: null })
+  }, [notice, navigate, pathname, hash])
+  const ready = Boolean(data)
+
+  // Breadcrumbs link to /app#projects; the list only exists once the data has loaded.
+  useEffect(() => {
+    if (ready && hash === '#projects') document.getElementById('projects')?.scrollIntoView({ block: 'start' })
+  }, [ready, hash])
 
   if (loading && !data) return <Loading label="Loading your lab…" />
   if (error && !data) {
@@ -72,6 +87,13 @@ export default function Overview() {
         <p className="page-lede">{nextStep}</p>
       </header>
 
+      {notice && (
+        <p className="notice" role="status">
+          <Check aria-hidden="true" />
+          {notice}
+        </p>
+      )}
+
       <Inventory
         projects={projects.length}
         testCases={testCases.length}
@@ -84,7 +106,7 @@ export default function Overview() {
       {projects.length === 0 ? (
         <FirstUse />
       ) : (
-        <section className="section" aria-labelledby="projects-title">
+        <section id="projects" className="section" aria-labelledby="projects-title">
           <div className="section-head">
             <h2 id="projects-title" className="section-title">
               Your projects
@@ -324,7 +346,7 @@ function BestFit({ completed, projects }: { completed: Benchmark[]; projects: Pr
 function ProjectCard({ project, cases, benchmarks }: { project: Project; cases: number; benchmarks: Benchmark[] }) {
   const latest = benchmarks[0]
   let next: { label: string; to: string }
-  if (cases === 0) next = { label: 'Add test cases', to: `/app/projects/${project.id}` }
+  if (cases === 0) next = { label: 'Add test cases', to: `/app/projects/${project.id}/analysis?open=tests&add=1` }
   else if (!latest) next = { label: 'Run the first benchmark', to: `/app/new?project=${project.id}` }
   else if (latest.status === 'pending') next = { label: `Run “${latest.name}”`, to: `/app/benchmarks/${latest.id}` }
   else if (latest.status === 'running') next = { label: 'Watch the run in progress', to: `/app/benchmarks/${latest.id}` }

@@ -43,6 +43,8 @@ const decimalFormatter = new Intl.NumberFormat(LOCALE, { maximumFractionDigits: 
 
 export const formatCount = (value: number) => countFormatter.format(value)
 
+export const wordCount = (text: string) => text.trim().split(/\s+/).filter(Boolean).length
+
 export function formatSignedCount(value: number): string {
   const rounded = Math.round(value)
   if (rounded === 0) return '0'

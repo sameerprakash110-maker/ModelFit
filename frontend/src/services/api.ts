@@ -57,6 +57,7 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
 
 const get = <T>(path: string) => request<T>('GET', path)
 const post = <T>(path: string, body?: unknown) => request<T>('POST', path, body)
+const put = <T>(path: string, body: unknown) => request<T>('PUT', path, body)
 const del = (path: string) => request<void>('DELETE', path)
 
 function query(params: Record<string, string | number | boolean | undefined>): string {
@@ -89,6 +90,9 @@ export interface ProjectInput {
   system_prompt: string
 }
 
+/** Fields sent are replaced; fields left out are kept. Send null to clear an optional field. */
+export type ProjectUpdate = Partial<ProjectInput>
+
 export interface TestCase {
   id: string
   project_id: string
@@ -104,6 +108,8 @@ export interface TestCaseInput {
   input_prompt: string
   expected_behavior: string
 }
+
+export type TestCaseUpdate = Partial<Pick<TestCaseInput, 'input_prompt' | 'expected_behavior'>>
 
 export type BenchmarkStatus = 'pending' | 'running' | 'completed' | 'failed'
 
@@ -147,6 +153,29 @@ export interface RunSummary {
   average_quality_score: number | null
   is_mock: boolean
   message: string
+}
+
+/** Counts for one benchmark from GET /benchmarks/{id}/summary. Money in US dollars. */
+export interface BenchmarkSummary {
+  benchmark_id: string
+  status: BenchmarkStatus
+  is_mock: boolean
+  total_evaluations: number
+  successful_evaluations: number
+  failed_evaluations: number
+  total_cost_usd: number
+  completed_at: string | null
+  model_summaries: Record<
+    string,
+    {
+      provider: string
+      sample_count: number
+      success_rate: number
+      avg_latency_ms: number
+      total_cost_usd: number
+      avg_judge_score: number | null
+    }
+  >
 }
 
 export interface Provider {
@@ -266,15 +295,18 @@ export const api = {
   listProjects: () => get<Project[]>('/projects?limit=500'),
   getProject: (id: string) => get<Project>(`/projects/${id}`),
   createProject: (input: ProjectInput) => post<Project>('/projects', input),
+  updateProject: (id: string, input: ProjectUpdate) => put<Project>(`/projects/${id}`, input),
   deleteProject: (id: string) => del(`/projects/${id}`),
 
   listTestCases: (projectId?: string) => get<TestCase[]>(`/test-cases${query({ project_id: projectId, limit: 500 })}`),
   createTestCase: (input: TestCaseInput) => post<TestCase>('/test-cases', input),
+  updateTestCase: (id: string, input: TestCaseUpdate) => put<TestCase>(`/test-cases/${id}`, input),
   deleteTestCase: (id: string) => del(`/test-cases/${id}`),
 
   listBenchmarks: (projectId?: string) =>
     get<Benchmark[]>(`/benchmarks${query({ project_id: projectId, limit: 500 })}`),
   getBenchmark: (id: string) => get<Benchmark>(`/benchmarks/${id}`),
+  getBenchmarkSummary: (id: string) => get<BenchmarkSummary>(`/benchmarks/${id}/summary`),
   createBenchmark: (input: BenchmarkInput) => post<Benchmark>('/benchmarks', input),
   runBenchmark: (id: string, options: RunOptions) => post<RunSummary>(`/benchmarks/${id}/run`, options),
   /** Closes out a run left 'running' after a crash. The backend refuses while the run is still active. */
