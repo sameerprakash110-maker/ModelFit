@@ -1,5 +1,5 @@
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
-from sqlalchemy import JSON, String, Text
+from sqlalchemy import JSON, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
 from app.models.base import TimestampMixin, UUIDPrimaryKeyMixin
@@ -17,6 +17,13 @@ class Project(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     business_domain: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    # Owning user. Nullable so projects created before accounts existed stay readable.
+    owner_id: Mapped[Optional[str]] = mapped_column(
+        String(36),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=True,
+        index=True,
+    )
     # system_prompt is required (NOT NULL) per the database contract
     system_prompt: Mapped[str] = mapped_column(Text, nullable=False)
 

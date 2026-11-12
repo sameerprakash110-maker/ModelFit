@@ -728,6 +728,37 @@
   border-bottom: 0;
 }
 
+/* Log Out is an action, so it is a <button>; make it look like the links it sits beside. */
+.lp button.site-nav-login,
+.lp button.stitch-link,
+.lp .site-menu button {
+  border-top: 0;
+  border-inline: 0;
+  border-radius: 0;
+  background: none;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.lp button.site-nav-login,
+.lp button.stitch-link {
+  padding-inline: 0;
+  font-size: inherit;
+}
+
+.lp .site-menu button {
+  display: block;
+  width: 100%;
+  padding: 0.9rem 0;
+  border-bottom: 0;
+  color: #fff;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-variation-settings: 'wdth' 96;
+  font-size: 1.3rem;
+  text-align: left;
+}
+
 @media (max-width: 23rem) {
   .lp .site-nav-cta {
     display: none;

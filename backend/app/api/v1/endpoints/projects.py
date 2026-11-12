@@ -24,7 +24,7 @@ def create_project(
     db: Session = Depends(get_db),
 ) -> ProjectResponse:
     """Create and persist a new benchmarking project owned by the authenticated user."""
-    project = ProjectService.create_project(db, project_in)
+    project = ProjectService.create_project(db, project_in, owner_id=current_user.id)
     OwnershipService.record_project_owner(project.id, current_user.id)
     return project
 

@@ -1,6 +1,6 @@
 import os
 from functools import lru_cache
-from typing import List
+from typing import Any, List, Optional
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -26,6 +26,7 @@ class Settings(BaseSettings):
     # AI Provider API Keys
     GEMINI_API_KEY: str | None = None
     GROQ_API_KEY: str | None = None
+    OPENROUTER_API_KEY: str | None = None
 
     # JWT & Authentication
     JWT_SECRET_KEY: str = Field(
@@ -65,6 +66,20 @@ class Settings(BaseSettings):
         extra="ignore",
         case_sensitive=True,
     )
+
+
+# Which setting holds each provider's API key.
+PROVIDER_KEY_SETTINGS = {
+    "gemini": "GEMINI_API_KEY",
+    "groq": "GROQ_API_KEY",
+    "openrouter": "OPENROUTER_API_KEY",
+}
+
+
+def provider_api_key(settings: Any, provider_name: str) -> Optional[str]:
+    """Return the configured API key for a provider, or None. Tolerates partial settings objects."""
+    attr = PROVIDER_KEY_SETTINGS.get(provider_name.lower().strip())
+    return getattr(settings, attr, None) if attr else None
 
 
 @lru_cache()

@@ -14,9 +14,8 @@ def test_list_providers(client: TestClient):
 
     names = [p["name"] for p in data]
 
-    # Only Gemini and Groq should be supported
-    assert set(names) == {"gemini", "groq"}
-    assert len(names) == 2
+    assert set(names) == {"gemini", "groq", "openrouter"}
+    assert len(names) == 3
 
     # Ensure sensitive fields are NEVER exposed
     for provider in data:
@@ -30,7 +29,7 @@ def test_list_providers(client: TestClient):
 def test_get_specific_provider(client: TestClient):
     """Test retrieving metadata for supported providers."""
 
-    for provider_name in ["gemini", "groq"]:
+    for provider_name in ["gemini", "groq", "openrouter"]:
         res = client.get(f"/api/v1/providers/{provider_name}")
 
         assert res.status_code == 200

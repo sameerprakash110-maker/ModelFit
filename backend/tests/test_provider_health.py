@@ -34,11 +34,11 @@ class FakeAsyncClient:
         return self.response
 
 
-def configure(monkeypatch, gemini="gemini-secret", groq="groq-secret"):
+def configure(monkeypatch, gemini="gemini-secret", groq="groq-secret", openrouter="openrouter-secret"):
     monkeypatch.setattr(
         provider_health_service,
         "get_settings",
-        lambda: SimpleNamespace(GEMINI_API_KEY=gemini, GROQ_API_KEY=groq),
+        lambda: SimpleNamespace(GEMINI_API_KEY=gemini, GROQ_API_KEY=groq, OPENROUTER_API_KEY=openrouter),
     )
 
 
@@ -57,6 +57,12 @@ def configure(monkeypatch, gemini="gemini-secret", groq="groq-secret"):
             "https://api.groq.com/openai/v1/models",
             "Authorization",
             "Bearer groq-secret",
+        ),
+        (
+            "openrouter",
+            "https://openrouter.ai/api/v1/key",
+            "Authorization",
+            "Bearer openrouter-secret",
         ),
     ],
 )
@@ -85,9 +91,9 @@ async def test_successful_health_check_uses_models_endpoint_and_returns_latency(
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("provider", ["gemini", "groq"])
+@pytest.mark.parametrize("provider", ["gemini", "groq", "openrouter"])
 async def test_missing_api_key_does_not_make_request(monkeypatch, provider):
-    configure(monkeypatch, gemini="", groq="")
+    configure(monkeypatch, gemini="", groq="", openrouter="")
     monkeypatch.setattr(
         provider_health_service.httpx,
         "AsyncClient",

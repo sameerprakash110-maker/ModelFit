@@ -1,0 +1,130 @@
+import { useId, useState } from 'react'
+import type { FormEvent } from 'react'
+import { useActionError } from '../../hooks/useResource.ts'
+import { api } from '../../services/api.ts'
+import type { Project } from '../../services/api.ts'
+import { ErrorNote } from './ui.tsx'
+
+/** Create a project: a name and the system prompt the workload uses. Everything else is optional. */
+export function ProjectForm({
+  onCreated,
+  onCancel,
+  submitLabel = 'Create project',
+}: {
+  onCreated: (project: Project) => void
+  onCancel?: () => void
+  submitLabel?: string
+}) {
+  const id = useId()
+  const describeError = useActionError()
+  const [name, setName] = useState('')
+  const [systemPrompt, setSystemPrompt] = useState('')
+  const [domain, setDomain] = useState('')
+  const [description, setDescription] = useState('')
+  const [errors, setErrors] = useState<{ name?: string; systemPrompt?: string }>({})
+  const [submitError, setSubmitError] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
+
+  const onSubmit = async (event: FormEvent) => {
+    event.preventDefault()
+    const next: typeof errors = {}
+    if (!name.trim()) next.name = 'Give the project a name, such as the feature it powers.'
+    if (!systemPrompt.trim()) next.systemPrompt = 'Paste the system prompt your workload uses today.'
+    setErrors(next)
+    if (next.name || next.systemPrompt) return
+
+    setSaving(true)
+    setSubmitError(null)
+    try {
+      onCreated(
+        await api.createProject({
+          name: name.trim(),
+          system_prompt: systemPrompt.trim(),
+          business_domain: domain.trim() || null,
+          description: description.trim() || null,
+        }),
+      )
+    } catch (err) {
+      setSubmitError(describeError(err))
+      setSaving(false)
+    }
+  }
+
+  return (
+    <form className="form" onSubmit={onSubmit} noValidate>
+      <div className="field">
+        <label htmlFor={`${id}-name`}>Project name</label>
+        <input
+          id={`${id}-name`}
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Support ticket triage"
+          maxLength={255}
+          aria-invalid={errors.name ? true : undefined}
+          aria-describedby={errors.name ? `${id}-name-err` : undefined}
+        />
+        {errors.name && (
+          <p id={`${id}-name-err`} className="field-error">
+            {errors.name}
+          </p>
+        )}
+      </div>
+      <div className="field">
+        <label htmlFor={`${id}-prompt`}>System prompt</label>
+        <textarea
+          id={`${id}-prompt`}
+          rows={4}
+          value={systemPrompt}
+          onChange={(e) => setSystemPrompt(e.target.value)}
+          placeholder="You are a support assistant. Classify each ticket as billing, technical or account, mark it urgent or normal, and reply in two sentences."
+          aria-invalid={errors.systemPrompt ? true : undefined}
+          aria-describedby={`${id}-prompt-hint`}
+        />
+        {errors.systemPrompt ? (
+          <p id={`${id}-prompt-hint`} className="field-error">
+            {errors.systemPrompt}
+          </p>
+        ) : (
+          <p id={`${id}-prompt-hint`} className="hint">
+            The instructions your app sends with every request. Every model in a benchmark gets this same prompt.
+          </p>
+        )}
+      </div>
+      <details className="advanced">
+        <summary>Add a domain and description (optional)</summary>
+        <div className="form-row">
+          <div className="field">
+            <label htmlFor={`${id}-domain`}>Business domain</label>
+            <input
+              id={`${id}-domain`}
+              value={domain}
+              onChange={(e) => setDomain(e.target.value)}
+              placeholder="Customer support"
+              maxLength={100}
+            />
+          </div>
+          <div className="field">
+            <label htmlFor={`${id}-desc`}>Description</label>
+            <input
+              id={`${id}-desc`}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Routes incoming tickets to the right team"
+            />
+          </div>
+        </div>
+      </details>
+      {submitError && <ErrorNote>{submitError}</ErrorNote>}
+      <div className="actions">
+        <button type="submit" className="btn-primary" disabled={saving}>
+          {saving ? 'Creating…' : submitLabel}
+        </button>
+        {onCancel && (
+          <button type="button" className="btn-text" onClick={onCancel}>
+            Cancel
+          </button>
+        )}
+      </div>
+    </form>
+  )
+}

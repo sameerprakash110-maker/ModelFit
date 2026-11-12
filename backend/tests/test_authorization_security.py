@@ -304,3 +304,30 @@ def test_operational_limits_enforcement(user_a_client):
     res_data = run_res.json()
     error_msg = res_data.get("error", {}).get("message") or res_data.get("detail", "")
     assert "exceeds limit" in error_msg.lower()
+
+
+def test_project_ownership_survives_registry_reset(user_a_client, user_b_client):
+    """Ownership is stored on the project row, so a restart (empty in-memory registry) keeps projects private."""
+    from app.services.ownership_service import OwnershipService
+
+    client, user_a_id, token_a = user_a_client
+    _, _, token_b = user_b_client
+
+    res = client.post(
+        "/api/v1/projects",
+        json={"name": "Persisted Owner Project", "system_prompt": "You are helpful."},
+        headers={"Authorization": f"Bearer {token_a}"},
+    )
+    assert res.status_code == 201
+    project_id = res.json()["id"]
+
+    OwnershipService.reset_store()  # simulate a server restart
+
+    listed_b = client.get("/api/v1/projects", headers={"Authorization": f"Bearer {token_b}"}).json()
+    assert project_id not in [p["id"] for p in listed_b]
+    assert client.get(
+        f"/api/v1/projects/{project_id}", headers={"Authorization": f"Bearer {token_b}"}
+    ).status_code == 404
+
+    listed_a = client.get("/api/v1/projects", headers={"Authorization": f"Bearer {token_a}"}).json()
+    assert project_id in [p["id"] for p in listed_a]

@@ -31,9 +31,12 @@ class ProjectService:
         return project
 
     @staticmethod
-    def create_project(db: Session, project_in: ProjectCreate) -> Project:
-        """Create and persist a new project."""
+    def create_project(
+        db: Session, project_in: ProjectCreate, owner_id: Optional[str] = None
+    ) -> Project:
+        """Create and persist a new project, optionally owned by a user."""
         project = Project(
+            owner_id=owner_id,
             name=project_in.name,
             description=project_in.description,
             business_domain=project_in.business_domain,

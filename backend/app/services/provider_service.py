@@ -1,5 +1,5 @@
 from typing import List, Optional
-from app.core.config import get_settings
+from app.core.config import get_settings, provider_api_key
 from app.core.exceptions import EntityNotFoundException
 from app.providers import PROVIDER_CLASSES
 from app.schemas.provider import ProviderResponse
@@ -20,16 +20,17 @@ class ProviderService:
             "description": "Ultra-low-latency LPU-powered inference for open-weight models (Qwen, GPT-OSS).",
             "default_model": "qwen/qwen3.8-27b",
         },
+        "openrouter": {
+            "display_name": "OpenRouter",
+            "description": "One API for models from Anthropic, OpenAI, DeepSeek, Mistral and xAI.",
+            "default_model": "anthropic/claude-haiku-5.5",
+        },
     }
 
     @classmethod
     def _is_configured(cls, provider_name: str) -> bool:
-        settings = get_settings()
-        if provider_name == "gemini":
-            return bool(settings.GEMINI_API_KEY and settings.GEMINI_API_KEY.strip())
-        elif provider_name == "groq":
-            return bool(settings.GROQ_API_KEY and settings.GROQ_API_KEY.strip())
-        return False
+        key = provider_api_key(get_settings(), provider_name)
+        return bool(key and key.strip())
 
     @classmethod
     def get_all_providers(cls) -> List[ProviderResponse]:

@@ -2,7 +2,7 @@ import time
 
 import httpx
 
-from app.core.config import get_settings
+from app.core.config import get_settings, provider_api_key
 from app.core.exceptions import EntityNotFoundException
 from app.schemas.provider import ProviderHealthResponse
 
@@ -13,6 +13,8 @@ class ProviderHealthService:
     _ENDPOINTS = {
         "gemini": "https://generativelanguage.googleapis.com/v1beta/models",
         "groq": "https://api.groq.com/openai/v1/models",
+        # OpenRouter's model list is public, so check the key endpoint instead: it needs a valid key.
+        "openrouter": "https://openrouter.ai/api/v1/key",
     }
     _TIMEOUT_SECONDS = 5.0
 
@@ -23,9 +25,7 @@ class ProviderHealthService:
             raise EntityNotFoundException("Provider", provider_name)
 
         settings = get_settings()
-        api_key = (
-            settings.GEMINI_API_KEY if name == "gemini" else settings.GROQ_API_KEY
-        )
+        api_key = provider_api_key(settings, name)
         if not api_key or not api_key.strip():
             return ProviderHealthResponse(
                 provider_name=name,

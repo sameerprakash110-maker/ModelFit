@@ -1,6 +1,7 @@
 import { Menu, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { isAuthenticated, logOut } from '../../services/auth.ts'
 import { useActiveSection } from '../../hooks/useActiveSection.ts'
 import { Wordmark } from './Wordmark.tsx'
 
@@ -19,6 +20,7 @@ export function SiteNav() {
   const [compact, setCompact] = useState(false)
   const [open, setOpen] = useState(false)
   const active = useActiveSection(SECTION_IDS)
+  const [signedIn, setSignedIn] = useState(isAuthenticated)
 
   useEffect(() => {
     const onScroll = () => setCompact(window.scrollY > 16)
@@ -45,6 +47,11 @@ export function SiteNav() {
   }, [open])
 
   const close = () => setOpen(false)
+  const onLogOut = () => {
+    close()
+    logOut()
+    setSignedIn(false)
+  }
   const toTop = () => {
     close()
     window.scrollTo({ top: 0 })
@@ -68,12 +75,20 @@ export function SiteNav() {
         </ul>
 
         <div className="site-nav-account">
-          <Link to="/login" className="site-nav-login">
-            Log In
-          </Link>
-          <Link to="/signup" className="btn btn--outline btn--small">
-            Sign Up
-          </Link>
+          {signedIn ? (
+            <button type="button" className="site-nav-login" onClick={onLogOut}>
+              Log Out
+            </button>
+          ) : (
+            <>
+              <Link to="/login" className="site-nav-login">
+                Log In
+              </Link>
+              <Link to="/signup" className="btn btn--outline btn--small">
+                Sign Up
+              </Link>
+            </>
+          )}
         </div>
 
         <Link to="/app" className="btn btn--small site-nav-cta">
@@ -101,16 +116,26 @@ export function SiteNav() {
               </a>
             </li>
           ))}
-          <li>
-            <Link to="/login" onClick={close}>
-              Log In
-            </Link>
-          </li>
-          <li>
-            <Link to="/signup" onClick={close}>
-              Sign Up
-            </Link>
-          </li>
+          {signedIn ? (
+            <li>
+              <button type="button" onClick={onLogOut}>
+                Log Out
+              </button>
+            </li>
+          ) : (
+            <>
+              <li>
+                <Link to="/login" onClick={close}>
+                  Log In
+                </Link>
+              </li>
+              <li>
+                <Link to="/signup" onClick={close}>
+                  Sign Up
+                </Link>
+              </li>
+            </>
+          )}
         </ul>
       </div>
     </header>

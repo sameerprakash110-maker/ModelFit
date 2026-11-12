@@ -110,90 +110,112 @@ backend/
 
 ---
 
-## Installation & Setup
+## Running Locally
 
-### 1. Clone & Enter Directory
+ModelFit runs as two processes, each in its own terminal:
+
+| Part | Folder | Address |
+|---|---|---|
+| Backend (FastAPI) | `backend/` | http://localhost:8000 (API docs at `/docs`) |
+| Frontend (React + Vite) | `frontend/` | http://localhost:5173 |
+
+The frontend dev server forwards every `/api` request to the backend on port 8000, so start the backend first and keep both running.
+
+### Prerequisites
+
+- **Python 3.11+**
+- **Node.js 20.19+ or 22.12+** (npm comes with it)
+
+### 1. Backend (terminal 1)
 
 ```bash
 cd backend
-```
-
-### 2. Create Virtual Environment
-
-```bash
 python -m venv .venv
-
-# On Windows:
-.venv\Scripts\activate
-
-# On macOS/Linux:
-source .venv/bin/activate
 ```
 
-### 3. Install Dependencies
+Activate the virtual environment:
+
+| Shell | Command |
+|---|---|
+| PowerShell | `.venv\Scripts\Activate.ps1` |
+| Command Prompt | `.venv\Scripts\activate.bat` |
+| Git Bash | `source .venv/Scripts/activate` |
+| macOS / Linux | `source .venv/bin/activate` |
+
+> If PowerShell refuses to run the activation script, run `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` once, then try again.
+
+Install dependencies, create your settings file, set up the database, and start the server:
 
 ```bash
 pip install -r requirements.txt
-```
-
-### 4. Configure Environment Variables
-
-Copy the example environment file:
-
-```bash
-cp .env.example .env
-```
-
-Edit `.env` to configure your settings and optional provider API keys:
-
-```ini
-APP_NAME=ModelFit
-APP_VERSION=1.0.0
-DEBUG=True
-DATABASE_URL=sqlite:///./modelfit.db
-
-# Optional AI Provider API Keys
-GEMINI_API_KEY=
-OPENAI_API_KEY=
-GROQ_API_KEY=
-
-FRONTEND_URL=http://localhost:5173
-```
-
-*(Note: API keys are completely optional for the initial backend skeleton. Mock provider modes and catalog queries work without external keys.)*
-
----
-
-## Database Migrations
-
-Apply Alembic migrations to set up the SQLite database:
-
-```bash
+cp .env.example .env          # Command Prompt: copy .env.example .env
 alembic upgrade head
-```
-
-To generate future migrations after modifying models:
-
-```bash
-alembic revision --autogenerate -m "describe_changes"
-alembic upgrade head
-```
-
----
-
-## Running the Application
-
-Start the FastAPI development server with live reload:
-
-```bash
 uvicorn app.main:app --reload --port 8000
 ```
 
-The backend will be running at:
-- **Base URL**: `http://localhost:8000`
-- **Interactive Swagger UI**: [http://localhost:8000/docs](http://localhost:8000/docs)
-- **ReDoc Documentation**: [http://localhost:8000/redoc](http://localhost:8000/redoc)
-- **OpenAPI JSON**: [http://localhost:8000/openapi.json](http://localhost:8000/openapi.json)
+Check it's up: http://localhost:8000/api/v1/health should return `"status": "healthy"`.
+
+> **Run `alembic upgrade head` before the first start.** The server creates any missing tables on startup but doesn't record a migration version, so if it starts first, later migrations fail with "table already exists". See [Troubleshooting](#troubleshooting).
+
+#### Provider API keys (optional)
+
+Add keys to `backend/.env`, then restart the backend:
+
+| Variable | Provider | Get a key |
+|---|---|---|
+| `GEMINI_API_KEY` | Google Gemini | https://aistudio.google.com/apikey |
+| `GROQ_API_KEY` | Groq | https://console.groq.com/keys |
+| `OPENROUTER_API_KEY` | OpenRouter (Anthropic, OpenAI, DeepSeek, Mistral, xAI models) | https://openrouter.ai/keys |
+
+Without keys, everything still works in **Simulated** mode: benchmarks run end to end with placeholder answers and scores. A provider's key turns on **Live** runs for that provider's models.
+
+`backend/.env` is gitignored. Never commit it or paste keys into code.
+
+### 2. Frontend (terminal 2)
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Open http://localhost:5173, sign up at `/signup`, and you land in the dashboard at `/app`. From there: create a project → add test cases → create a benchmark → **Run benchmark**.
+
+Optional settings go in `frontend/.env`:
+
+| Variable | Default | What it does |
+|---|---|---|
+| `VITE_USD_TO_INR` | `88` | Exchange rate used to show provider prices (in US$) as rupees |
+| `VITE_API_BASE_URL` | `/api/v1` | Where the browser sends API calls. Only needed when the backend is on a different domain, e.g. in production |
+
+To point the dev server at a backend on another port, set `MODELFIT_API_TARGET` when starting it:
+
+```bash
+MODELFIT_API_TARGET=http://localhost:8001 npm run dev                 # bash / macOS / Linux
+$env:MODELFIT_API_TARGET="http://localhost:8001"; npm run dev         # PowerShell
+```
+
+### After pulling new changes
+
+```bash
+# backend/ (with the virtual environment active)
+pip install -r requirements.txt
+alembic upgrade head
+
+# frontend/
+npm install
+```
+
+### Troubleshooting
+
+| Symptom | Fix |
+|---|---|
+| The app says it "could not reach the backend" | The backend isn't running on port 8000. Start it (step 1). |
+| `alembic upgrade head` fails with "table … already exists" | The server created the tables before migrations ran. For a local database you don't need, stop the backend, delete `backend/modelfit.db` (and any `modelfit.db-wal` / `modelfit.db-shm`), then run `alembic upgrade head` again. This erases local accounts and projects. |
+| Server errors mentioning `no such column` | Your database is behind the code. Run `alembic upgrade head`. |
+| **Live** mode is greyed out | That provider's API key is missing. Add it to `backend/.env` and restart the backend. |
+| A run fails with OpenRouter "HTTP 402 … requires more credits" | Add credit at https://openrouter.ai/settings/credits. |
+| `npm run dev` says port 5173 is in use | Another dev server is already running. Vite switches to the next free port (5174, …); use the address it prints. |
 
 ---
 
@@ -210,7 +232,7 @@ The backend will be running at:
 - `DELETE /api/v1/projects/{project_id}` – Delete a project and cascade-delete benchmarks and test cases.
 
 ### AI Providers
-- `GET /api/v1/providers` – List all supported AI providers (`gemini`, `openai`, `groq`), supported models, and credential configuration status (secrets are never leaked).
+- `GET /api/v1/providers` – List all supported AI providers (`gemini`, `groq`, `openrouter`), supported models, and credential configuration status (secrets are never leaked).
 - `GET /api/v1/providers/{provider_name}` – Get metadata for a specific provider.
 
 ### Benchmarks
@@ -237,10 +259,19 @@ The backend will be running at:
 
 ## Running the Automated Test Suite
 
-ModelFit uses pytest with an isolated in-memory SQLite database (`sqlite:///:memory:` with `StaticPool`), ensuring test runs never mutate or pollute development databases:
+ModelFit uses pytest with an isolated in-memory SQLite database (`sqlite:///:memory:` with `StaticPool`), ensuring test runs never mutate or pollute development databases. Tests also never call real AI providers: provider keys are blanked for the test run even if `backend/.env` has them.
+
+Run from `backend/` with the virtual environment active:
 
 ```bash
 pytest -v
+```
+
+Frontend checks, from `frontend/`:
+
+```bash
+npm run lint     # oxlint
+npm run build    # type-check and production build
 ```
 
 ---
